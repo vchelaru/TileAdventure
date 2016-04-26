@@ -45,6 +45,18 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Entities\Character\BoyAnimations.achx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Name>BoyAnimations</Name>
+    </None>
+    <None Include="GlobalContent\characters.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Name>characters</Name>
+    </None>
+    <None Include="GlobalContent\dead.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Name>dead</Name>
+    </None>
     <None Include="Screens\GameScreen\Levels\Level1.tmx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Name>Level1</Name>

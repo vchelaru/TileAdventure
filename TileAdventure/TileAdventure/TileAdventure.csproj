@@ -130,6 +130,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DataTypes\TileMapInfo.Generated.cs" />
+    <Compile Include="Entities\Character.cs" />
+    <Compile Include="Entities\Character.Generated.cs">
+      <DependentUpon>Character.cs</DependentUpon>
+    </Compile>
     <Compile Include="GlobalContent.Generated.cs" />
     <Compile Include="OcularPlaneRuntime\OcularPlaneManager.cs" />
     <Compile Include="Performance\IEntityFactory.Generated.cs" />

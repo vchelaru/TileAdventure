@@ -624,6 +624,22 @@ namespace TMXGlueLib
                 this.nameField = value;
             }
         }
+
+        [XmlAttribute("visible")]
+        public int VisibleAsInt
+        {
+            get;
+            set;
+        }
+
+        [XmlIgnore]
+        public bool Visible
+        {
+            get
+            {
+                return VisibleAsInt != 0;
+            }
+        }
     }
 
     /// <remarks/>

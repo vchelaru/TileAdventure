@@ -19,7 +19,7 @@
    H4sIAAAAAAAAC2NgGLqABYgZkTALne1nAmIuJMw0av+Ish+W7riQ2NQAvlQyZxTQHozGFX3AaDiPglEw+MBovhwFo2AUjIKhCQCFkQxiABAAAA==
   </data>
  </layer>
- <objectgroup name="Object Layer 1">
+ <objectgroup name="Object Layer 1" visible="0">
   <object id="4" gid="49" x="272" y="112" width="16" height="16"/>
  </objectgroup>
 </map>

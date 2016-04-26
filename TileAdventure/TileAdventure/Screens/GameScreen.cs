@@ -35,9 +35,9 @@ namespace TileAdventure.Screens
 
             InitializeLevel("Level1");
 
-            Camera.Main.ClearBorders();
-            Camera.Main.ClearMinimumsAndMaximums();
-            Camera.Main.BackgroundColor = Color.Yellow;
+            this.CharacterInstance.MovementInput = InputManager.Keyboard.Get2DInput(
+                Keys.A, Keys.D, Keys.W, Keys.S);
+            
 		}
 
 		void CustomActivity(bool firstTimeCalled)
