@@ -1,0 +1,100 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<GlueProjectSave xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <In2D>true</In2D>
+  <RunFullscreen>false</RunFullscreen>
+  <SetResolution>false</SetResolution>
+  <ResolutionWidth>800</ResolutionWidth>
+  <ResolutionHeight>600</ResolutionHeight>
+  <SetOrthogonalResolution>true</SetOrthogonalResolution>
+  <OrthogonalWidth>400</OrthogonalWidth>
+  <OrthogonalHeight>300</OrthogonalHeight>
+  <Screens>
+    <ScreenSave>
+      <Tags>
+        <string>GLUE</string>
+      </Tags>
+      <Source>GLUE</Source>
+      <CustomVariables>
+        <CustomVariable>
+          <Properties>
+            <PropertySave>
+              <Name>Type</Name>
+              <ValueAsString>bool</ValueAsString>
+            </PropertySave>
+          </Properties>
+          <Name>UsesTmxLevelFiles</Name>
+          <Type>bool</Type>
+          <DefaultValue xsi:type="xsd:boolean">true</DefaultValue>
+        </CustomVariable>
+      </CustomVariables>
+      <Name>Screens\GameScreen</Name>
+      <ReferencedFiles>
+        <ReferencedFileSave>
+          <Name>Screens/GameScreen/Levels/Level1.tmx</Name>
+          <IsSharedStatic>true</IsSharedStatic>
+          <LoadedOnlyWhenReferenced>true</LoadedOnlyWhenReferenced>
+          <RuntimeType>FlatRedBall.TileGraphics.LayeredTileMap</RuntimeType>
+          <ProjectsToExcludeFrom />
+        </ReferencedFileSave>
+        <ReferencedFileSave>
+          <Name>Screens/GameScreen/Tilesets/basictiles.png</Name>
+          <IsSharedStatic>true</IsSharedStatic>
+          <RuntimeType>Microsoft.Xna.Framework.Graphics.Texture2D</RuntimeType>
+          <ProjectsToExcludeFrom />
+        </ReferencedFileSave>
+      </ReferencedFiles>
+      <NamedObjects>
+        <NamedObjectSave>
+          <SourceType>FlatRedBallType</SourceType>
+          <SourceClassType>TileShapeCollection</SourceClassType>
+          <InstanceName>SolidCollisions</InstanceName>
+          <AttachToContainer>true</AttachToContainer>
+          <GenerateTimedEmit>true</GenerateTimedEmit>
+          <IndependentOfCamera>true</IndependentOfCamera>
+        </NamedObjectSave>
+      </NamedObjects>
+    </ScreenSave>
+  </Screens>
+  <Entities />
+  <GlobalFiles />
+  <GlobalContentSettingsSave>
+    <LoadAsynchronously>false</LoadAsynchronously>
+    <RecordLockContention>false</RecordLockContention>
+  </GlobalContentSettingsSave>
+  <SyncedProjects />
+  <StartUpScreen>Screens\GameScreen</StartUpScreen>
+  <ResolutionPresets />
+  <PerformanceSettingsSave>
+    <ThrowExceptionOnPostInitializeContentLoad>false</ThrowExceptionOnPostInitializeContentLoad>
+    <RecordInitializeSegments>false</RecordInitializeSegments>
+  </PerformanceSettingsSave>
+  <IgnoredDirectories />
+  <CustomClasses>
+    <CustomClassSave>
+      <CsvFilesUsingThis />
+      <RequiredProperties>
+        <InstructionSave>
+          <Type>bool</Type>
+          <Member>HasCollision</Member>
+        </InstructionSave>
+        <InstructionSave>
+          <Type>string</Type>
+          <Member>EntityToCreate</Member>
+        </InstructionSave>
+        <InstructionSave>
+          <Type>string</Type>
+          <Member>Name</Member>
+        </InstructionSave>
+        <InstructionSave>
+          <Type>System.Collections.Generic.List&lt;FlatRedBall.Content.AnimationChain.AnimationFrameSaveBase&gt;</Type>
+          <Member>EmbeddedAnimation</Member>
+        </InstructionSave>
+      </RequiredProperties>
+      <Name>TileMapInfo</Name>
+      <GenerateCode>true</GenerateCode>
+    </CustomClassSave>
+  </CustomClasses>
+  <TranslatedFiles />
+  <ApplyToFixedResolutionPlatforms>true</ApplyToFixedResolutionPlatforms>
+  <ExternallyBuiltFileDirectory>../../</ExternallyBuiltFileDirectory>
+</GlueProjectSave>
