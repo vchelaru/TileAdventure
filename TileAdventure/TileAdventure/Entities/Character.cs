@@ -15,6 +15,7 @@ using FlatRedBall.Math.Splines;
 using BitmapFont = FlatRedBall.Graphics.BitmapFont;
 using Cursor = FlatRedBall.Gui.Cursor;
 using GuiManager = FlatRedBall.Gui.GuiManager;
+using FlatRedBall.TileCollisions;
 
 #if FRB_XNA || SILVERLIGHT
 using Keys = Microsoft.Xna.Framework.Input.Keys;
@@ -26,9 +27,22 @@ using Texture2D = Microsoft.Xna.Framework.Graphics.Texture2D;
 
 namespace TileAdventure.Entities
 {
+    public enum Direction
+    {
+        None,
+        Up,
+        Down,
+        Left,
+        Right
+    }
+
+
 	public partial class Character
 	{
+
         public I2DInput MovementInput { get; set; }
+
+        public bool isMovingToTile = false;
 
 
         /// <summary>
@@ -39,31 +53,114 @@ namespace TileAdventure.Entities
 		private void CustomInitialize()
 		{
 
-
 		}
 
-		private void CustomActivity()
-		{
-            ReadInput();
-
-		}
-
-        private void ReadInput()
+        private void CreateCollision()
         {
-            if (MovementInput != null)
-            {
-                this.XVelocity = MovementInput.X * MovementSpeed;
+        }
 
-                // This only allows the character to move in one direction at a time
-                if (MovementInput.X == 0)
+        private void CustomActivity()
+		{
+
+		}
+
+        public void PerformMovementActivity(TileShapeCollection collision)
+        {
+            var desiredDirection = GetDesiredDirection();
+
+            bool startedMoving = ApplyDesiredDirectionToMovement(desiredDirection, collision);
+
+            ApplyDesiredDirectionToAnimation(desiredDirection, startedMoving);
+        }
+
+        private void ApplyDesiredDirectionToAnimation(Direction desiredDirection, bool startedMoving)
+        {
+            bool shouldFaceDirection = startedMoving ||
+                // This means the user is facing a collision area
+                (desiredDirection != Direction.None && this.isMovingToTile == false);
+            if (shouldFaceDirection)
+            {
+                switch (desiredDirection)
                 {
-                    this.YVelocity = MovementInput.Y * MovementSpeed;
+                    case Direction.Left: SpriteInstance.CurrentChainName = "WalkLeft"; break;
+                    case Direction.Right: SpriteInstance.CurrentChainName = "WalkRight"; break;
+                    case Direction.Up: SpriteInstance.CurrentChainName = "WalkUp"; break;
+                    case Direction.Down: SpriteInstance.CurrentChainName = "WalkDown"; break;
+                }
+            }
+
+            // If standing still, don't animate.
+            this.SpriteInstance.Animate = isMovingToTile;
+        }
+
+        private bool ApplyDesiredDirectionToMovement(Direction desiredDirection, TileShapeCollection collision)
+        {
+            bool movedNewDirection = false;
+
+            const int tileSize = 16;
+
+
+            if(isMovingToTile == false && desiredDirection != Direction.None)
+            {
+                float desiredX = this.X;
+                float desiredY = this.Y;
+                
+                switch(desiredDirection)
+                {
+                    case Direction.Left: desiredX -= tileSize; break;
+                    case Direction.Right: desiredX += tileSize; break;
+                    case Direction.Up: desiredY += tileSize; break;
+                    case Direction.Down: desiredY -= tileSize; break;
+                }
+                float timeToTake = tileSize / MovementSpeed;
+
+                this.Rectangle.X = desiredX;
+                this.Rectangle.Y = desiredY;
+
+                bool isBlocked = collision.CollideAgainst(Rectangle);
+
+                if (isBlocked)
+                {
+                    // move the collision back so it occupies the character's tile
+                    this.Rectangle.Position = this.Position;
                 }
                 else
                 {
-                    this.YVelocity = 0;
+                    InstructionManager.MoveToAccurate(this, desiredX, desiredY, this.Z, timeToTake);
+                    isMovingToTile = true;
+                    this.Set(nameof(isMovingToTile)).To(false).After(timeToTake);
+                    movedNewDirection = true;
                 }
             }
+
+            return movedNewDirection;
+        }
+
+        private Direction GetDesiredDirection()
+        {
+            Direction desiredDirection = Direction.None;
+
+            if (MovementInput != null)
+            {
+                if (MovementInput.X < 0)
+                {
+                    desiredDirection = Direction.Left;
+                }
+                else if (MovementInput.X > 0)
+                {
+                    desiredDirection = Direction.Right;
+                }
+                else if (MovementInput.Y < 0)
+                {
+                    desiredDirection = Direction.Down;
+                }
+                else if (MovementInput.Y > 0)
+                {
+                    desiredDirection = Direction.Up;
+                }
+            }
+
+            return desiredDirection;
         }
 
         private void CustomDestroy()

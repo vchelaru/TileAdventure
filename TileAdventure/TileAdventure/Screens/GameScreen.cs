@@ -42,8 +42,7 @@ namespace TileAdventure.Screens
 
 		void CustomActivity(bool firstTimeCalled)
 		{
-            InputManager.Keyboard.ControlPositionedObject(Camera.Main, 5);
-
+            this.CharacterInstance.PerformMovementActivity(this.SolidCollisions);
 		}
 
 		void CustomDestroy()

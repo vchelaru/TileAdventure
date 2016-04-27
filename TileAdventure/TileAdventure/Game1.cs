@@ -56,7 +56,8 @@ namespace TileAdventure
             FlatRedBallServices.GraphicsOptions.TextureFilter = TextureFilter.Point;
 
 			CameraSetup.SetupCamera(SpriteManager.Camera, graphics);
-			GlobalContent.Initialize();
+
+            GlobalContent.Initialize();
 			FlatRedBall.Screens.ScreenManager.Start(typeof(TileAdventure.Screens.GameScreen));
 
             base.Initialize();
