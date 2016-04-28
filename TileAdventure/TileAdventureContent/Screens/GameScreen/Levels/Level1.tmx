@@ -1,25 +1,24 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<map version="1.0" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="16" tileheight="16" nextobjectid="6">
- <tileset firstgid="1" name="basictiles" tilewidth="16" tileheight="16" tilecount="120" columns="8">
-  <image source="../Tilesets/basictiles.png" width="128" height="240"/>
-  <tile id="76">
-   <properties>
-    <property name="HasCollision (bool)" value="True"/>
-    <property name="Name (string)" value="Unnamed1"/>
-   </properties>
-  </tile>
- </tileset>
- <layer name="Tile Layer 1" width="32" height="32">
-  <data encoding="base64" compression="gzip">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<map xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" version="1.0" orientation="orthogonal" width="32" height="32" tilewidth="16" tileheight="16">
+  <tileset source="..\Tilesets\basictiles.tsx" firstgid="1">
+    <image source="basictiles.png" width="128" height="240" />
+  </tileset>
+  <layer name="Tile Layer 1" width="32" height="32" visible="1">
+    <properties />
+    <data encoding="base64" compression="gzip">
    H4sIAAAAAAAAC+3DAQkAAAwEoQvw/fOux1Bw1VRVVdXXDwiD1TcAEAAA
-  </data>
- </layer>
- <layer name="Tile Layer 2" width="32" height="32">
-  <data encoding="base64" compression="gzip">
+  <length>1024</length></data>
+  </layer>
+  <layer name="Tile Layer 2" width="32" height="32" visible="1">
+    <properties />
+    <data encoding="base64" compression="gzip">
    H4sIAAAAAAAAC2NgGLqABYgZkTALne1nAmIuJMw0av+Ish+W7riQ2NQAvlQyZxTQHozGFX3AaDiPglEw+MBovhwFo2AUjIKhCQCFkQxiABAAAA==
-  </data>
- </layer>
- <objectgroup name="Object Layer 1" visible="0">
-  <object id="4" gid="49" x="272" y="112" width="16" height="16"/>
- </objectgroup>
+  <length>1024</length></data>
+  </layer>
+  <objectgroup name="Object Layer 1" visible="0">
+    <properties />
+    <object gid="49" x="272" y="112" width="16" height="16" rotation="0">
+      <properties />
+    </object>
+  </objectgroup>
 </map>

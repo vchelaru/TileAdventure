@@ -49,6 +49,10 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Name>BoyAnimations</Name>
     </None>
+    <None Include="Entities\DialogDisplay\TmxFile.tmx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Name>TmxFile</Name>
+    </None>
     <None Include="GlobalContent\characters.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Name>characters</Name>
@@ -61,7 +65,15 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Name>Level1</Name>
     </None>
+    <None Include="Screens\GameScreen\Levels\Level2.tmx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Name>Level2</Name>
+    </None>
     <None Include="Screens\GameScreen\Tilesets\basictiles.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Name>basictiles</Name>
+    </None>
+    <None Include="Screens\GameScreen\Tilesets\basictiles.tsx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Name>basictiles</Name>
     </None>

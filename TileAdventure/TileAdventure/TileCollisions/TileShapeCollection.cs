@@ -430,7 +430,6 @@ namespace FlatRedBall.TileCollisions
             }
         }
 
-
         public static void AddCollisionFrom(this TileShapeCollection tileShapeCollection,
             LayeredTileMap layeredTileMap)
         {

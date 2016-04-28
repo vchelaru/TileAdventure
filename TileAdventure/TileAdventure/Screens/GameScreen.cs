@@ -17,6 +17,7 @@ using Cursor = FlatRedBall.Gui.Cursor;
 using GuiManager = FlatRedBall.Gui.GuiManager;
 using FlatRedBall.Localization;
 using Microsoft.Xna.Framework;
+using TileAdventure.Entities;
 
 #if FRB_XNA || SILVERLIGHT
 using Keys = Microsoft.Xna.Framework.Input.Keys;
@@ -29,23 +30,83 @@ namespace TileAdventure.Screens
 {
 	public partial class GameScreen
 	{
+        static string levelToLoad = "Level1";
+        static float initialCharacterX = 216;
+        static float initialCharacterY = -216;
 
 		void CustomInitialize()
-		{
+        {
 
-            InitializeLevel("Level1");
+            InitializeLevel(levelToLoad);
+
+            InitializeCharacter();
+
+            // Temporary until we get TMX support:
+            CreateLevelTriggers();
+
+        }
+
+        private void InitializeCharacter()
+        {
+            CharacterInstance.X = initialCharacterX;
+            this.CharacterInstance.Y = initialCharacterY;
+
+            this.CharacterInstance.ReactToReposition();
 
             this.CharacterInstance.MovementInput = InputManager.Keyboard.Get2DInput(
                 Keys.A, Keys.D, Keys.W, Keys.S);
-            
-		}
+        }
 
-		void CustomActivity(bool firstTimeCalled)
+        private void CreateLevelTriggers()
+        {
+            var trigger = new MapNavigationTrigger();
+            var collision = new AxisAlignedRectangle();
+            collision.Width = 100;
+            collision.Height = 100;
+
+            collision.X = 50;
+            collision.Y = -50;
+            collision.Visible = true;
+
+            trigger.Collision.AxisAlignedRectangles.Add(collision);
+
+            trigger.TargetMap = "Level2";
+            trigger.TargetX = 160;
+            trigger.TargetY = -160;
+
+            this.MapNavigationTriggerList.Add(trigger);
+        }
+
+        void CustomActivity(bool firstTimeCalled)
 		{
             this.CharacterInstance.PerformMovementActivity(this.SolidCollisions);
+
+            //if(InputManager.Keyboard.KeyPushed(Keys.Space))
+            //{
+            //    levelToLoad = "Level2";
+            //    this.RestartScreen(reloadContent: false);
+            //}
+
+            CollisionActivity();
 		}
 
-		void CustomDestroy()
+        private void CollisionActivity()
+        {
+            foreach(var trigger in MapNavigationTriggerList)
+            {
+                if(CharacterInstance.BackwardCollision.CollideAgainst(trigger.Collision))
+                {
+                    levelToLoad = trigger.TargetMap;
+                    initialCharacterX = trigger.TargetX;
+                    initialCharacterY = trigger.TargetY;
+
+                    RestartScreen(reloadContent: false);
+                }
+            }
+
+        }
+
+        void CustomDestroy()
 		{
 
 

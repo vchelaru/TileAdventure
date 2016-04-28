@@ -57,7 +57,7 @@ namespace TileAdventure
 
 			CameraSetup.SetupCamera(SpriteManager.Camera, graphics);
 
-            GlobalContent.Initialize();
+			GlobalContent.Initialize();
 			FlatRedBall.Screens.ScreenManager.Start(typeof(TileAdventure.Screens.GameScreen));
 
             base.Initialize();
