@@ -16,6 +16,7 @@ using BitmapFont = FlatRedBall.Graphics.BitmapFont;
 using Cursor = FlatRedBall.Gui.Cursor;
 using GuiManager = FlatRedBall.Gui.GuiManager;
 using FlatRedBall.TileCollisions;
+using Microsoft.Xna.Framework;
 
 #if FRB_XNA || SILVERLIGHT
 using Keys = Microsoft.Xna.Framework.Input.Keys;
@@ -50,10 +51,17 @@ namespace TileAdventure.Entities
         /// This method is called when the Entity is added to managers. Entities which are instantiated but not
         /// added to managers will not have this method called.
         /// </summary>
-		private void CustomInitialize()
+        private void CustomInitialize()
 		{
+            ForwardCollision.Position = this.Position;
+            BackwardCollision.Position = this.Position;
 
-		}
+#if DEBUG
+            ForwardCollision.Visible = BackwardCollision.Visible = true;
+            ForwardCollision.Color = Color.Green;
+            BackwardCollision.Color = Color.Red;
+#endif
+        }
 
         private void CreateCollision()
         {
@@ -114,21 +122,22 @@ namespace TileAdventure.Entities
                 }
                 float timeToTake = tileSize / MovementSpeed;
 
-                this.Rectangle.X = desiredX;
-                this.Rectangle.Y = desiredY;
+                this.ForwardCollision.X = desiredX;
+                this.ForwardCollision.Y = desiredY;
 
-                bool isBlocked = collision.CollideAgainst(Rectangle);
+                bool isBlocked = collision.CollideAgainst(ForwardCollision);
 
                 if (isBlocked)
                 {
                     // move the collision back so it occupies the character's tile
-                    this.Rectangle.Position = this.Position;
+                    this.ForwardCollision.Position = this.Position;
                 }
                 else
                 {
                     InstructionManager.MoveToAccurate(this, desiredX, desiredY, this.Z, timeToTake);
                     isMovingToTile = true;
                     this.Set(nameof(isMovingToTile)).To(false).After(timeToTake);
+                    this.Call(() => BackwardCollision.Position = this.Position).After(timeToTake);
                     movedNewDirection = true;
                 }
             }
@@ -165,10 +174,17 @@ namespace TileAdventure.Entities
 
         private void CustomDestroy()
 		{
-
+            ShapeManager.Remove(ForwardCollision);
+            ShapeManager.Remove(BackwardCollision);
 
 		}
 
+
+        internal void ReactToReposition()
+        {
+            this.ForwardCollision.Position = this.Position;
+            this.BackwardCollision.Position = this.Position;
+        }
         private static void CustomLoadStaticContent(string contentManagerName)
         {
 
