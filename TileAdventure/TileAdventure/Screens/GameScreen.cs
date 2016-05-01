@@ -81,12 +81,6 @@ namespace TileAdventure.Screens
 		{
             this.CharacterInstance.PerformMovementActivity(this.SolidCollisions);
 
-            //if(InputManager.Keyboard.KeyPushed(Keys.Space))
-            //{
-            //    levelToLoad = "Level2";
-            //    this.RestartScreen(reloadContent: false);
-            //}
-
             CollisionActivity();
 		}
 
