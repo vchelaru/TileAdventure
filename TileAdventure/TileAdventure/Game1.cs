@@ -11,6 +11,7 @@ using System.Linq;
 
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using FlatRedBall.Localization;
 
 namespace TileAdventure
 {
@@ -58,11 +59,19 @@ namespace TileAdventure
 			CameraSetup.SetupCamera(SpriteManager.Camera, graphics);
 
 			GlobalContent.Initialize();
+
+            GameSpecificInitialization();
+
+
 			FlatRedBall.Screens.ScreenManager.Start(typeof(TileAdventure.Screens.GameScreen));
 
             base.Initialize();
         }
 
+        private void GameSpecificInitialization()
+        {
+            LocalizationManager.CurrentLanguage = 1;
+        }
 
         protected override void Update(GameTime gameTime)
         {

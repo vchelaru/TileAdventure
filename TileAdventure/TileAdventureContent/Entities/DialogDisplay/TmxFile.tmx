@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.0" orientation="orthogonal" renderorder="right-down" width="16" height="7" tilewidth="16" tileheight="16" nextobjectid="1">
+<map version="1.0" orientation="orthogonal" renderorder="right-down" width="20" height="7" tilewidth="16" tileheight="16" nextobjectid="1">
  <tileset firstgid="1" source="../../Screens/GameScreen/Tilesets/basictiles.tsx"/>
- <layer name="Tile Layer 1" width="16" height="7">
+ <layer name="Tile Layer 1" width="20" height="7">
   <data encoding="base64" compression="gzip">
-   H4sIAAAAAAAAC4tjYGCIJxMnAHEaEKeTiTNG9TPkAXE+mbgAiAEYE/qtwAEAAA==
+   H4sIAAAAAAAAC4tjYGCIpxJOAOI0IE6nEs4YNY9i8/KAOJ9KuACIAQExnUEwAgAA
   </data>
  </layer>
 </map>

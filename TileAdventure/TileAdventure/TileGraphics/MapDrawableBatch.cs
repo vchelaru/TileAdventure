@@ -22,7 +22,7 @@ namespace FlatRedBall.TileGraphics
         Y
     }
 
-    public class MapDrawableBatch : PositionedObject, IDrawableBatch
+    public class MapDrawableBatch : PositionedObject, IVisible, IDrawableBatch
     {
         #region Fields
         protected Tileset mTileset;
@@ -785,7 +785,7 @@ namespace FlatRedBall.TileGraphics
         {
             ////////////////////Early Out///////////////////
 
-            if (!Visible)
+            if (!AbsoluteVisible)
             {
                 return;
             }
@@ -1057,6 +1057,45 @@ namespace FlatRedBall.TileGraphics
         // TODO: I would like to somehow make this a property on the LayeredTileMap, but right now it is easier to put them here
         public float CameraOriginY { get; set; }
         public float CameraOriginX { get; set; }
+
+        IVisible IVisible.Parent
+        {
+            get
+            {
+                return this.Parent as IVisible;
+            }
+        }
+
+        public bool AbsoluteVisible
+        {
+            get
+            {
+                if(this.Visible)
+                {
+                    var parentAsIVisible = this.Parent as IVisible;
+
+                    if(parentAsIVisible == null || IgnoresParentVisibility)
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        // this is true, so return if the parent is visible:
+                        return parentAsIVisible.AbsoluteVisible;
+                    }
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+
+        public bool IgnoresParentVisibility
+        {
+            get;
+            set;
+        }
 
         #region XML Docs
         /// <summary>

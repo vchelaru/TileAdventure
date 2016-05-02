@@ -49,6 +49,18 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Name>BoyAnimations</Name>
     </None>
+    <None Include="Entities\Character\GirlAnimations.achx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Name>GirlAnimations</Name>
+    </None>
+    <None Include="Entities\DialogDisplay\BitmapFontFile.fnt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Name>BitmapFontFile</Name>
+    </None>
+    <None Include="Entities\DialogDisplay\BitmapFontFile_0.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Name>BitmapFontFile_0</Name>
+    </None>
     <None Include="Entities\DialogDisplay\TmxFile.tmx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Name>TmxFile</Name>
@@ -61,9 +73,17 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Name>dead</Name>
     </None>
+    <None Include="GlobalContent\GameText.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Name>GameText</Name>
+    </None>
     <None Include="Screens\GameScreen\Levels\Level1.tmx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Name>Level1</Name>
+    </None>
+    <None Include="Screens\GameScreen\Levels\Level1Npcs.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Name>Level1Npcs</Name>
     </None>
     <None Include="Screens\GameScreen\Levels\Level2.tmx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

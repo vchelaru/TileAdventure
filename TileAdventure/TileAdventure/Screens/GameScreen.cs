@@ -18,6 +18,7 @@ using GuiManager = FlatRedBall.Gui.GuiManager;
 using FlatRedBall.Localization;
 using Microsoft.Xna.Framework;
 using TileAdventure.Entities;
+using TileAdventure.DataTypes;
 
 #if FRB_XNA || SILVERLIGHT
 using Keys = Microsoft.Xna.Framework.Input.Keys;
@@ -34,16 +35,52 @@ namespace TileAdventure.Screens
         static float initialCharacterX = 216;
         static float initialCharacterY = -216;
 
+        bool CanMoveCharacter
+        {
+            get
+            {
+                return DialogDisplayInstance.Visible == false;
+            }
+        }
+
 		void CustomInitialize()
         {
-
-            InitializeLevel(levelToLoad);
+            LoadLevel(levelToLoad);
 
             InitializeCharacter();
 
             // Temporary until we get TMX support:
             CreateLevelTriggers();
 
+        }
+
+        void LoadLevel(string levelToLoad)
+        {
+            InitializeLevel(levelToLoad);
+            CreateNpcs(levelToLoad);
+        }
+
+        private void CreateNpcs(string levelToLoad)
+        {
+            var levelNpcFile = GetFile(levelToLoad + "Npcs") as Dictionary<string, DataTypes.LevelNpc>;
+
+            foreach(var npcData in levelNpcFile.Values)
+            {
+                CreateNpc(npcData);
+            }
+        }
+
+        private void CreateNpc(LevelNpc npcData)
+        {
+            Character npc = new Character();
+            npc.X = npcData.X;
+            npc.Y = npcData.Y;
+            npc.Z = 1;
+            npc.ReactToReposition();
+
+            npc.Dialog = npcData.Dialog;
+            npc.Animation = npcData.Animation;
+            NpcCharacterList.Add(npc);
         }
 
         private void InitializeCharacter()
@@ -55,6 +92,8 @@ namespace TileAdventure.Screens
 
             this.CharacterInstance.MovementInput = InputManager.Keyboard.Get2DInput(
                 Keys.A, Keys.D, Keys.W, Keys.S);
+
+            this.CharacterInstance.ActionInput = InputManager.Keyboard.GetKey(Keys.Space);
         }
 
         private void CreateLevelTriggers()
@@ -79,10 +118,50 @@ namespace TileAdventure.Screens
 
         void CustomActivity(bool firstTimeCalled)
 		{
-            this.CharacterInstance.PerformMovementActivity(this.SolidCollisions);
+            DialogActivity();
+
+            if (CanMoveCharacter)
+            {
+                this.CharacterInstance.PerformMovementActivity(this.SolidCollisions, NpcCharacterList);
+            }
 
             CollisionActivity();
 		}
+
+        private void DialogActivity()
+        {
+            if (CharacterInstance.IsAttemptingAction)
+            {
+                if (this.DialogDisplayInstance.Visible)
+                {
+                    this.DialogDisplayInstance.Visible = false;
+                }
+                else
+                {
+                    Character npcTalkingTo = null;
+                    foreach (var npc in this.NpcCharacterList)
+                    {
+                        if (CharacterInstance.ForwardCollision.CollideAgainst(npc.BackwardCollision))
+                        {
+                            npcTalkingTo = npc;
+                            break;
+                        }
+                    }
+
+                    if(npcTalkingTo != null)
+                    {
+                        ShowDialog(npcTalkingTo.Dialog);
+                    }
+                }
+            }
+            
+        }
+
+        private void ShowDialog(string stringId)
+        {
+            this.DialogDisplayInstance.Visible = true;
+            this.DialogDisplayInstance.Text = LocalizationManager.Translate(stringId);
+        }
 
         private void CollisionActivity()
         {

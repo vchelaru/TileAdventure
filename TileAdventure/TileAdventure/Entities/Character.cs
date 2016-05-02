@@ -17,6 +17,7 @@ using Cursor = FlatRedBall.Gui.Cursor;
 using GuiManager = FlatRedBall.Gui.GuiManager;
 using FlatRedBall.TileCollisions;
 using Microsoft.Xna.Framework;
+using FlatRedBall.Math;
 
 #if FRB_XNA || SILVERLIGHT
 using Keys = Microsoft.Xna.Framework.Input.Keys;
@@ -40,11 +41,32 @@ namespace TileAdventure.Entities
 
 	public partial class Character
 	{
+        Direction directionFacing = Direction.Down;
+
+        const int tileSize = 16;
+
+        public string Dialog { get; set; }
+        public string Animation
+        {
+            set
+            {
+                var file = GetFile(value) as AnimationChainList;
+
+                this.SpriteInstance.AnimationChains = file;
+            }
+        }
 
         public I2DInput MovementInput { get; set; }
 
+        public IPressableInput ActionInput { get; set; }
+
         public bool isMovingToTile = false;
 
+        public bool IsAttemptingAction
+        {
+            get;
+            private set;
+        }
 
         /// <summary>
         /// Initialization logic which is execute only one time for this Entity (unless the Entity is pooled).
@@ -55,6 +77,7 @@ namespace TileAdventure.Entities
 		{
             ForwardCollision.Position = this.Position;
             BackwardCollision.Position = this.Position;
+            UpdateActionCollision();
 
 #if DEBUG
             ForwardCollision.Visible = BackwardCollision.Visible = true;
@@ -63,22 +86,58 @@ namespace TileAdventure.Entities
 #endif
         }
 
+        /// <summary>
+        /// Places the ActionCollision in front of where
+        /// the character is facing. The action collision
+        /// will always be in front of the BackwardCollision.
+        /// </summary>
+        private void UpdateActionCollision()
+        {
+
+            float desiredX = this.X;
+            float desiredY = this.Y;
+
+            MoveInDirection(directionFacing, ref desiredX, ref desiredY);
+
+            ActionCollision.X = desiredX;
+            ActionCollision.Y = desiredY;
+        }
+
         private void CreateCollision()
         {
         }
 
         private void CustomActivity()
 		{
-
+            IsAttemptingAction = ActionInput != null && ActionInput.WasJustPressed && isMovingToTile == false;
 		}
 
-        public void PerformMovementActivity(TileShapeCollection collision)
+        public void PerformMovementActivity(TileShapeCollection collision, PositionedObjectList<Character> characters)
         {
             var desiredDirection = GetDesiredDirection();
 
-            bool startedMoving = ApplyDesiredDirectionToMovement(desiredDirection, collision);
+            if(desiredDirection != Direction.None)
+            {
+                directionFacing = desiredDirection;
+            }
+
+            bool startedMoving = ApplyDesiredDirectionToMovement(desiredDirection, collision, characters);
 
             ApplyDesiredDirectionToAnimation(desiredDirection, startedMoving);
+
+            TryUpdateActionCollision(desiredDirection, startedMoving);
+        }
+
+        private void TryUpdateActionCollision(Direction desiredDirection, bool startedMoving)
+        {
+            bool shouldUpdateCollision = 
+                // This means the user is facing a collision area
+                (desiredDirection != Direction.None && this.isMovingToTile == false);
+
+            if(shouldUpdateCollision)
+            {
+                UpdateActionCollision();
+            }
         }
 
         private void ApplyDesiredDirectionToAnimation(Direction desiredDirection, bool startedMoving)
@@ -101,31 +160,21 @@ namespace TileAdventure.Entities
             this.SpriteInstance.Animate = isMovingToTile;
         }
 
-        private bool ApplyDesiredDirectionToMovement(Direction desiredDirection, TileShapeCollection collision)
+        private bool ApplyDesiredDirectionToMovement(Direction desiredDirection, TileShapeCollection collision, 
+            PositionedObjectList<Character> characters)
         {
             bool movedNewDirection = false;
-
-            const int tileSize = 16;
-
 
             if(isMovingToTile == false && desiredDirection != Direction.None)
             {
                 float desiredX = this.X;
                 float desiredY = this.Y;
-                
-                switch(desiredDirection)
-                {
-                    case Direction.Left: desiredX -= tileSize; break;
-                    case Direction.Right: desiredX += tileSize; break;
-                    case Direction.Up: desiredY += tileSize; break;
-                    case Direction.Down: desiredY -= tileSize; break;
-                }
-                float timeToTake = tileSize / MovementSpeed;
-
+                bool isBlocked;
+                MoveInDirection(desiredDirection, ref desiredX, ref desiredY);
                 this.ForwardCollision.X = desiredX;
                 this.ForwardCollision.Y = desiredY;
 
-                bool isBlocked = collision.CollideAgainst(ForwardCollision);
+                isBlocked = GetIfIsBlocked(collision, characters);
 
                 if (isBlocked)
                 {
@@ -134,15 +183,59 @@ namespace TileAdventure.Entities
                 }
                 else
                 {
+                    float timeToTake = tileSize / MovementSpeed;
+
                     InstructionManager.MoveToAccurate(this, desiredX, desiredY, this.Z, timeToTake);
                     isMovingToTile = true;
-                    this.Set(nameof(isMovingToTile)).To(false).After(timeToTake);
-                    this.Call(() => BackwardCollision.Position = this.Position).After(timeToTake);
+
+                    this.Call(() =>
+                    {
+                        this.isMovingToTile = false;
+                        BackwardCollision.Position = this.Position;
+                        UpdateActionCollision();
+                    }).After(timeToTake);
+
                     movedNewDirection = true;
                 }
             }
 
             return movedNewDirection;
+        }
+
+        private bool GetIfIsBlocked(TileShapeCollection collision, PositionedObjectList<Character> characters)
+        {
+            var isBlocked = collision.CollideAgainst(ForwardCollision);
+
+            if(!isBlocked)
+            {
+                // If not blocked, check against NPCs
+                foreach(var npc in characters)
+                {
+                    // If the NPC is standing still - tests to see if where 'this' is trying to go to 
+                    // is already occupied by the NPC
+                    // If the NPC is walking - tests to see if where 'this' is trying to go is where 
+                    // the NPC is already going.
+                    
+                    if(npc != this && ForwardCollision.CollideAgainst(npc.ForwardCollision))
+                    {
+                        isBlocked = true;
+                        break;
+                    }
+                }
+            }
+
+            return isBlocked;
+        }
+
+        private static void MoveInDirection(Direction directionToMove, ref float x, ref float y)
+        {
+            switch (directionToMove)
+            {
+                case Direction.Left: x -= tileSize; break;
+                case Direction.Right: x += tileSize; break;
+                case Direction.Up: y += tileSize; break;
+                case Direction.Down: y -= tileSize; break;
+            }
         }
 
         private Direction GetDesiredDirection()
@@ -184,6 +277,8 @@ namespace TileAdventure.Entities
         {
             this.ForwardCollision.Position = this.Position;
             this.BackwardCollision.Position = this.Position;
+
+            UpdateActionCollision();
         }
         private static void CustomLoadStaticContent(string contentManagerName)
         {
