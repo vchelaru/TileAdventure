@@ -12,6 +12,7 @@ using System.Linq;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using FlatRedBall.Localization;
+using FlatRedBall.Math.Geometry;
 
 namespace TileAdventure
 {
@@ -70,6 +71,7 @@ namespace TileAdventure
 
         private void GameSpecificInitialization()
         {
+            
             LocalizationManager.CurrentLanguage = 1;
         }
 

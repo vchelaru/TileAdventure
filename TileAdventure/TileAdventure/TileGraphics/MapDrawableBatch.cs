@@ -12,6 +12,7 @@ using FlatRedBall.IO;
 using FlatRedBall.Input;
 using FlatRedBall.Debugging;
 using FlatRedBall.Math;
+using TMXGlueLib.DataTypes;
 
 namespace FlatRedBall.TileGraphics
 {
@@ -164,6 +165,12 @@ namespace FlatRedBall.TileGraphics
         #endregion
 
         #region Constructor / Initialization
+
+        // this exists purely for Clone
+        public MapDrawableBatch()
+        {
+
+        }
 
         public MapDrawableBatch(int numberOfTiles, Texture2D texture)
             : base()
@@ -386,12 +393,20 @@ namespace FlatRedBall.TileGraphics
             return mMapBatch;
         }
 
-        internal static MapDrawableBatch FromReducedLayer(TMXGlueLib.DataTypes.ReducedLayerInfo reducedLayerInfo, TMXGlueLib.DataTypes.ReducedTileMapInfo rtmi, string contentManagerName)
+        public MapDrawableBatch Clone()
         {
-            int tileDimensionWidth = rtmi.CellWidthInPixels;
-            int tileDimensionHeight = rtmi.CellHeightInPixels;
-            float quadWidth = rtmi.QuadWidth;
-            float quadHeight = rtmi.QuadHeight;
+            return base.Clone<MapDrawableBatch>();
+        }
+
+        // Bring the texture coordinates in to adjust for rendering issues on dx9/ogl
+        public const float CoordinateAdjustment = .00002f;
+
+        internal static MapDrawableBatch FromReducedLayer(TMXGlueLib.DataTypes.ReducedLayerInfo reducedLayerInfo, LayeredTileMap owner, TMXGlueLib.DataTypes.ReducedTileMapInfo rtmi, string contentManagerName)
+        {
+            int tileDimensionWidth = reducedLayerInfo.TileWidth;
+            int tileDimensionHeight = reducedLayerInfo.TileHeight;
+            float quadWidth = reducedLayerInfo.TileWidth;
+            float quadHeight = reducedLayerInfo.TileHeight;
 
             string textureName = reducedLayerInfo.Texture;
 
@@ -434,14 +449,12 @@ namespace FlatRedBall.TileGraphics
                 // A multi-layer map will offset the individual layer Z values, the quads should have a Z of 0.
                 // position.Z = reducedLayerInfo.Z;
 
-                // Bring the texture coordinates in to adjust for rendering issues on dx9/ogl
-                const float adjustment = .00002f;
 
                 var textureValues = new Vector4();
-                textureValues.X = adjustment + (float)quad.LeftTexturePixel / (float)texture.Width; // Left
-                textureValues.Y = -adjustment + (float)(quad.LeftTexturePixel + tileDimensionWidth) / (float)texture.Width; // Right
-                textureValues.Z = adjustment + (float)quad.TopTexturePixel / (float)texture.Height; // Top
-                textureValues.W = -adjustment + (float)(quad.TopTexturePixel + tileDimensionHeight) / (float)texture.Height; // Bottom
+                textureValues.X = CoordinateAdjustment + (float)quad.LeftTexturePixel / (float)texture.Width; // Left
+                textureValues.Y = -CoordinateAdjustment + (float)(quad.LeftTexturePixel + tileDimensionWidth) / (float)texture.Width; // Right
+                textureValues.Z = CoordinateAdjustment + (float)quad.TopTexturePixel / (float)texture.Height; // Top
+                textureValues.W = -CoordinateAdjustment + (float)(quad.TopTexturePixel + tileDimensionHeight) / (float)texture.Height; // Bottom
 
                 // pad before doing any rotations/flipping
                 const bool pad = true;
@@ -475,6 +488,13 @@ namespace FlatRedBall.TileGraphics
                 if ((quad.FlipFlags & TMXGlueLib.DataTypes.ReducedQuadInfo.FlippedDiagonallyFlag) == TMXGlueLib.DataTypes.ReducedQuadInfo.FlippedDiagonallyFlag)
                 {
                     toReturn.ApplyDiagonalFlip(tileIndex);
+                }
+
+                if (quad.QuadSpecificProperties != null)
+                {
+                    var listToAdd = quad.QuadSpecificProperties.ToList();
+                    listToAdd.Add(new NamedValue { Name = "Name", Value = quad.Name });
+                    owner.Properties.Add(quad.Name, listToAdd);
                 }
 
                 toReturn.RegisterName(quad.Name, tileIndex);
@@ -807,7 +827,7 @@ namespace FlatRedBall.TileGraphics
 
             if (numberOfTriangles != 0)
             {
-                
+
                 // Set graphics states
                 FlatRedBallServices.GraphicsDevice.RasterizerState = RasterizerState.CullNone;
                 FlatRedBall.Graphics.Renderer.BlendOperation = BlendOperation.Regular;
@@ -931,10 +951,13 @@ namespace FlatRedBall.TileGraphics
                 if (midItem > xGreaterThan)
                 {
                     // Is this the last one?
-                    if (mid * 4 + 4 >= list.Length)
-                    {
-                        return mid * 4;
-                    }
+                    // Not sure why this is here, because if we have just 2 items,
+                    // this will always return a value of 1 instead 
+                    //if (mid * 4 + 4 >= list.Length)
+                    //{
+                    //    return mid * 4;
+                    //}
+
                     // did we find it?
                     if (mid > 0 && list[(mid - 1) * 4].Position.X <= xGreaterThan)
                     {
@@ -987,10 +1010,12 @@ namespace FlatRedBall.TileGraphics
                 if (midItem > yGreaterThan)
                 {
                     // Is this the last one?
-                    if (mid * 4 + 4 >= list.Length)
-                    {
-                        return mid * 4;
-                    }
+                    // See comment in GetFirstAfterX
+                    //if (mid * 4 + 4 >= list.Length)
+                    //{
+                    //    return mid * 4;
+                    //}
+
                     // did we find it?
                     if (mid > 0 && list[(mid - 1) * 4].Position.Y <= yGreaterThan)
                     {
@@ -1040,9 +1065,9 @@ namespace FlatRedBall.TileGraphics
             float cameraOffsetX = leftView - CameraOriginX;
             float cameraOffsetY = topView - CameraOriginY;
 
-            this.RelativeX = cameraOffsetX*_parallaxMultiplierX;
-            this.RelativeY = cameraOffsetY*_parallaxMultiplierY;
-            
+            this.RelativeX = cameraOffsetX * _parallaxMultiplierX;
+            this.RelativeY = cameraOffsetY * _parallaxMultiplierY;
+
             this.TimedActivity(TimeManager.SecondDifference, TimeManager.SecondDifferenceSquaredDividedByTwo, TimeManager.LastSecondDifference);
 
             // The MapDrawableBatch may be attached to a LayeredTileMap (the container of all layers)
@@ -1070,11 +1095,11 @@ namespace FlatRedBall.TileGraphics
         {
             get
             {
-                if(this.Visible)
+                if (this.Visible)
                 {
                     var parentAsIVisible = this.Parent as IVisible;
 
-                    if(parentAsIVisible == null || IgnoresParentVisibility)
+                    if (parentAsIVisible == null || IgnoresParentVisibility)
                     {
                         return true;
                     }

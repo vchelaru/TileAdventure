@@ -53,6 +53,10 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Name>GirlAnimations</Name>
     </None>
+    <None Include="Entities\Character\GhostAnimations.achx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Name>GhostAnimations</Name>
+    </None>
     <None Include="Entities\DialogDisplay\BitmapFontFile.fnt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Name>BitmapFontFile</Name>
@@ -89,6 +93,10 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Name>Level2</Name>
     </None>
+    <None Include="Screens\GameScreen\Levels\TestLevel.tmx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Name>TestLevel</Name>
+    </None>
     <None Include="Screens\GameScreen\Tilesets\basictiles.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Name>basictiles</Name>
@@ -96,6 +104,10 @@
     <None Include="Screens\GameScreen\Tilesets\basictiles.tsx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Name>basictiles</Name>
+    </None>
+    <None Include="Screens\GameScreen\Tilesets\characters.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Name>characters</Name>
     </None>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\XNA Game Studio\$(XnaFrameworkVersion)\Microsoft.Xna.GameStudio.ContentPipeline.targets" />

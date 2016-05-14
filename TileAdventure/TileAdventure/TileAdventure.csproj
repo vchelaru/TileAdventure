@@ -136,6 +136,10 @@
     <Compile Include="Entities\Character.Generated.cs">
       <DependentUpon>Character.cs</DependentUpon>
     </Compile>
+    <Compile Include="Entities\DebuggingVariables.cs" />
+    <Compile Include="Entities\DebuggingVariables.Generated.cs">
+      <DependentUpon>DebuggingVariables.cs</DependentUpon>
+    </Compile>
     <Compile Include="Entities\DialogDisplay.cs" />
     <Compile Include="Entities\DialogDisplay.Generated.cs">
       <DependentUpon>DialogDisplay.cs</DependentUpon>
@@ -144,6 +148,13 @@
     <Compile Include="Entities\MapNavigationTrigger.Generated.cs">
       <DependentUpon>MapNavigationTrigger.cs</DependentUpon>
     </Compile>
+    <Compile Include="Entities\StartPoint.cs" />
+    <Compile Include="Entities\StartPoint.Generated.cs">
+      <DependentUpon>StartPoint.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Factories\CharacterFactory.Generated.cs" />
+    <Compile Include="Factories\MapNavigationTriggerFactory.Generated.cs" />
+    <Compile Include="Factories\StartPointFactory.Generated.cs" />
     <Compile Include="GlobalContent.Generated.cs" />
     <Compile Include="OcularPlaneRuntime\OcularPlaneManager.cs" />
     <Compile Include="Performance\IEntityFactory.Generated.cs" />
@@ -171,6 +182,7 @@
     <Compile Include="TileGraphics\MapLayer.cs" />
     <Compile Include="TileGraphics\MapTileset.cs" />
     <Compile Include="TileGraphics\MapTilesetTile.cs" />
+    <Compile Include="TileGraphics\NamedValue.cs" />
     <Compile Include="TileGraphics\ReducedTileMapInfo.cs" />
     <Compile Include="TileGraphics\ReducedTileMapInfo.TiledMapSave.cs">
       <DependentUpon>ReducedTileMapInfo.cs</DependentUpon>

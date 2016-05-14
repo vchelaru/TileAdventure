@@ -74,15 +74,22 @@ namespace TileAdventure.Entities
         /// added to managers will not have this method called.
         /// </summary>
         private void CustomInitialize()
-		{
-            ForwardCollision.Position = this.Position;
+        {
+            InitializeCollision();
+        }
+
+        private void InitializeCollision()
+        {
+            ForwardCollision.Position = Position;
             BackwardCollision.Position = this.Position;
             UpdateActionCollision();
 
 #if DEBUG
-            ForwardCollision.Visible = BackwardCollision.Visible = true;
+            ForwardCollision.Visible = BackwardCollision.Visible =
+                ActionCollision.Visible = DebuggingVariables.ShowShapes;
             ForwardCollision.Color = Color.Green;
             BackwardCollision.Color = Color.Red;
+
 #endif
         }
 
@@ -102,11 +109,7 @@ namespace TileAdventure.Entities
             ActionCollision.X = desiredX;
             ActionCollision.Y = desiredY;
         }
-
-        private void CreateCollision()
-        {
-        }
-
+        
         private void CustomActivity()
 		{
             IsAttemptingAction = ActionInput != null && ActionInput.WasJustPressed && isMovingToTile == false;

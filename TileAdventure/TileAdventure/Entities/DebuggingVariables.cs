@@ -12,47 +12,49 @@ using FlatRedBall.Graphics.Particle;
 
 using FlatRedBall.Math.Geometry;
 using FlatRedBall.Math.Splines;
-
+using BitmapFont = FlatRedBall.Graphics.BitmapFont;
 using Cursor = FlatRedBall.Gui.Cursor;
 using GuiManager = FlatRedBall.Gui.GuiManager;
-using FlatRedBall.Localization;
 
 #if FRB_XNA || SILVERLIGHT
 using Keys = Microsoft.Xna.Framework.Input.Keys;
 using Vector3 = Microsoft.Xna.Framework.Vector3;
 using Texture2D = Microsoft.Xna.Framework.Graphics.Texture2D;
+
 #endif
 #endregion
 
-namespace TileAdventure.Screens
+namespace TileAdventure.Entities
 {
-	public partial class TestScreen
+	public partial class DebuggingVariables
 	{
-
-		void CustomInitialize()
-		{
-            Camera.Main.X = Camera.Main.OrthogonalWidth / 2.0f;
-            Camera.Main.Y = -Camera.Main.OrthogonalHeight / 2.0f;
-
-		}
-
-		void CustomActivity(bool firstTimeCalled)
+        /// <summary>
+        /// Initialization logic which is execute only one time for this Entity (unless the Entity is pooled).
+        /// This method is called when the Entity is added to managers. Entities which are instantiated but not
+        /// added to managers will not have this method called.
+        /// </summary>
+		private void CustomInitialize()
 		{
 
 
 		}
 
-		void CustomDestroy()
+		private void CustomActivity()
 		{
 
 
 		}
 
-        static void CustomLoadStaticContent(string contentManagerName)
+		private void CustomDestroy()
+		{
+
+
+		}
+
+        private static void CustomLoadStaticContent(string contentManagerName)
         {
 
 
         }
-
 	}
 }

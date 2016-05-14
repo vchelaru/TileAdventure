@@ -19,6 +19,8 @@ using FlatRedBall.Localization;
 using Microsoft.Xna.Framework;
 using TileAdventure.Entities;
 using TileAdventure.DataTypes;
+using System.Collections.Specialized;
+using System.Linq;
 
 #if FRB_XNA || SILVERLIGHT
 using Keys = Microsoft.Xna.Framework.Input.Keys;
@@ -32,8 +34,7 @@ namespace TileAdventure.Screens
 	public partial class GameScreen
 	{
         static string levelToLoad = "Level1";
-        static float initialCharacterX = 216;
-        static float initialCharacterY = -216;
+        static string startPointName = "BottomOfTown";
 
         bool CanMoveCharacter
         {
@@ -48,45 +49,58 @@ namespace TileAdventure.Screens
             LoadLevel(levelToLoad);
 
             InitializeCharacter();
+        }
 
-            // Temporary until we get TMX support:
-            CreateLevelTriggers();
-
+        private void HandleNewNpc(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            foreach(var item in e.NewItems)
+            {
+                (item as Character).ReactToReposition();
+            }
         }
 
         void LoadLevel(string levelToLoad)
         {
             InitializeLevel(levelToLoad);
-            CreateNpcs(levelToLoad);
+            AdjustCamera();
+            AdjustNpcs();
+
+#if DEBUG
+            this.SolidCollisions.Visible =
+                DebuggingVariables.ShowShapes;
+#endif
         }
 
-        private void CreateNpcs(string levelToLoad)
+        private void AdjustNpcs()
         {
-            var levelNpcFile = GetFile(levelToLoad + "Npcs") as Dictionary<string, DataTypes.LevelNpc>;
-
-            foreach(var npcData in levelNpcFile.Values)
+            foreach(var character in NpcCharacterList)
             {
-                CreateNpc(npcData);
+                character.ReactToReposition();
             }
         }
 
-        private void CreateNpc(LevelNpc npcData)
+        private void AdjustCamera()
         {
-            Character npc = new Character();
-            npc.X = npcData.X;
-            npc.Y = npcData.Y;
-            npc.Z = 1;
-            npc.ReactToReposition();
+            Camera.Main.MinimumX -= .5f;
+            Camera.Main.MaximumX += .5f;
+            Camera.Main.MinimumY -= .5f;
+            Camera.Main.MaximumY += .5f;
+            
 
-            npc.Dialog = npcData.Dialog;
-            npc.Animation = npcData.Animation;
-            NpcCharacterList.Add(npc);
+
+            Camera.Main.X += .25f;
+            Camera.Main.Y += .25f;
         }
 
         private void InitializeCharacter()
         {
-            CharacterInstance.X = initialCharacterX;
-            this.CharacterInstance.Y = initialCharacterY;
+            var foundStartPoint = this.StartPointList.FirstOrDefault(item => item.Name == startPointName);
+            if(foundStartPoint == null)
+            {
+                throw new Exception($"Could not find start point with a name of {startPointName}");
+            }
+            this.CharacterInstance.X = foundStartPoint.X;
+            this.CharacterInstance.Y = foundStartPoint.Y;
 
             this.CharacterInstance.ReactToReposition();
 
@@ -94,26 +108,6 @@ namespace TileAdventure.Screens
                 Keys.A, Keys.D, Keys.W, Keys.S);
 
             this.CharacterInstance.ActionInput = InputManager.Keyboard.GetKey(Keys.Space);
-        }
-
-        private void CreateLevelTriggers()
-        {
-            var trigger = new MapNavigationTrigger();
-            var collision = new AxisAlignedRectangle();
-            collision.Width = 100;
-            collision.Height = 100;
-
-            collision.X = 50;
-            collision.Y = -50;
-            collision.Visible = true;
-
-            trigger.Collision.AxisAlignedRectangles.Add(collision);
-
-            trigger.TargetMap = "Level2";
-            trigger.TargetX = 160;
-            trigger.TargetY = -160;
-
-            this.MapNavigationTriggerList.Add(trigger);
         }
 
         void CustomActivity(bool firstTimeCalled)
@@ -141,7 +135,7 @@ namespace TileAdventure.Screens
                     Character npcTalkingTo = null;
                     foreach (var npc in this.NpcCharacterList)
                     {
-                        if (CharacterInstance.ForwardCollision.CollideAgainst(npc.BackwardCollision))
+                        if (CharacterInstance.ActionCollision.CollideAgainst(npc.BackwardCollision))
                         {
                             npcTalkingTo = npc;
                             break;
@@ -154,7 +148,6 @@ namespace TileAdventure.Screens
                     }
                 }
             }
-            
         }
 
         private void ShowDialog(string stringId)
@@ -170,8 +163,12 @@ namespace TileAdventure.Screens
                 if(CharacterInstance.BackwardCollision.CollideAgainst(trigger.Collision))
                 {
                     levelToLoad = trigger.TargetMap;
-                    initialCharacterX = trigger.TargetX;
-                    initialCharacterY = trigger.TargetY;
+                    startPointName = trigger.StartPointName;
+
+                    if(string.IsNullOrEmpty(startPointName))
+                    {
+                        throw new Exception("Trigger has an empty StartPointName");
+                    }
 
                     RestartScreen(reloadContent: false);
                 }

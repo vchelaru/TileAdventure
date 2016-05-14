@@ -12,19 +12,11 @@ using System.IO;
 using TMXGlueLib.DataTypes;
 using TMXGlueLib;
 using FlatRedBall.Graphics;
+using FlatRedBall.Graphics.Animation;
 
 namespace FlatRedBall.TileGraphics
 {
-    public struct NamedValue
-    {
-        public string Name;
-        public object Value;
 
-        public override string ToString()
-        {
-            return $"{Name}={Value}";
-        }
-    }
 
     public class LayeredTileMap : PositionedObject, IVisible
     {
@@ -86,6 +78,9 @@ namespace FlatRedBall.TileGraphics
             }
         }
 
+        public List<FlatRedBall.Math.Geometry.ShapeCollection> ShapeCollections { get; private set; } = new List<FlatRedBall.Math.Geometry.ShapeCollection>();
+
+
         public FlatRedBall.Math.PositionedObjectList<MapDrawableBatch> MapLayers
         {
             get
@@ -106,7 +101,7 @@ namespace FlatRedBall.TileGraphics
                 visible = value;
                 foreach (var item in this.mMapLists)
                 {
-                    item.Visible= visible;
+                    item.Visible = visible;
                 }
             }
         }
@@ -148,7 +143,7 @@ namespace FlatRedBall.TileGraphics
         }
 
         public LayeredTileMapAnimation Animation { get; set; }
-        
+
 
         IVisible IVisible.Parent
         {
@@ -317,7 +312,7 @@ namespace FlatRedBall.TileGraphics
             {
                 var reducedLayer = rtmi.Layers[i];
 
-                mdb = MapDrawableBatch.FromReducedLayer(reducedLayer, rtmi, contentManagerName);
+                mdb = MapDrawableBatch.FromReducedLayer(reducedLayer, toReturn, rtmi, contentManagerName);
 
                 mdb.AttachTo(toReturn, false);
                 mdb.RelativeZ = reducedLayer.Z;
@@ -341,20 +336,38 @@ namespace FlatRedBall.TileGraphics
 
             var toReturn = FromReducedTileMapInfo(rtmi, contentManager, fileName);
 
-            foreach (var layer in tms.Layers)
+
+            foreach (var mapObjectgroup in tms.objectgroup)
+            {
+                var shapeCollection = tms.ToShapeCollection(mapObjectgroup.Name);
+                if (shapeCollection != null && shapeCollection.IsEmpty == false)
+                {
+                    shapeCollection.Name = mapObjectgroup.Name;
+                    toReturn.ShapeCollections.Add(shapeCollection);
+                }
+            }
+
+            foreach (var layer in tms.MapLayers)
             {
                 var matchingLayer = toReturn.MapLayers.FirstOrDefault(item => item.Name == layer.Name);
-                
+
 
                 if (matchingLayer != null)
                 {
-                    foreach (var propertyValues in layer.properties)
+                    if (layer is MapLayer)
                     {
-                        matchingLayer.Properties.Add(new NamedValue { Name = propertyValues.StrippedName, Value = propertyValues.value });
+                        var mapLayer = layer as MapLayer;
+                        foreach (var propertyValues in mapLayer.properties)
+                        {
+                            matchingLayer.Properties.Add(new NamedValue
+                            {
+                                Name = propertyValues.StrippedName,
+                                Value = propertyValues.value
+                            });
+                        }
+
+                        matchingLayer.Visible = mapLayer.visible == 1;
                     }
-
-                    matchingLayer.Visible = layer.visible == 1;
-
                 }
             }
 
@@ -382,12 +395,77 @@ namespace FlatRedBall.TileGraphics
                 }
             }
 
+            var tmxDirectory = FileManager.GetDirectory(fileName);
+
+            var animationDictionary = new Dictionary<string, AnimationChain>();
+
+            // add animations
+            foreach (var tileset in tms.Tilesets)
+            {
+
+                string tilesetImageFile = tmxDirectory + tileset.Images[0].Source;
+
+                if (tileset.SourceDirectory != ".")
+                {
+                    tilesetImageFile = tmxDirectory + tileset.SourceDirectory + tileset.Images[0].Source;
+                }
+
+                var texture = FlatRedBallServices.Load<Microsoft.Xna.Framework.Graphics.Texture2D>(tilesetImageFile);
+
+                foreach (var tile in tileset.Tiles.Where(item => item.Animation != null && item.Animation.Frames.Count != 0))
+                {
+                    var animation = tile.Animation;
+
+                    var animationChain = new AnimationChain();
+                    foreach (var frame in animation.Frames)
+                    {
+                        var animationFrame = new AnimationFrame();
+                        animationFrame.FrameLength = frame.Duration / 1000.0f;
+                        animationFrame.Texture = texture;
+
+                        int tileIdRelative = frame.TileId;
+                        int globalTileId = (int)(tileIdRelative + tileset.Firstgid);
+
+                        int leftPixel;
+                        int rightPixel;
+                        int topPixel;
+                        int bottomPixel;
+                        TiledMapSave.GetPixelCoordinatesFromGid((uint)globalTileId, tileset, out leftPixel, out topPixel, out rightPixel, out bottomPixel);
+
+                        animationFrame.LeftCoordinate = MapDrawableBatch.CoordinateAdjustment + leftPixel / (float)texture.Width;
+                        animationFrame.RightCoordinate = -MapDrawableBatch.CoordinateAdjustment + rightPixel / (float)texture.Width;
+
+                        animationFrame.TopCoordinate = MapDrawableBatch.CoordinateAdjustment + topPixel / (float)texture.Height;
+                        animationFrame.BottomCoordinate = -MapDrawableBatch.CoordinateAdjustment + bottomPixel / (float)texture.Height;
+
+
+                        animationChain.Add(animationFrame);
+                    }
+
+                    var property = tile.properties.FirstOrDefault(item => item.StrippedNameLower == "name");
+
+                    if (property == null)
+                    {
+                        throw new InvalidOperationException(
+                            $"The tile with ID {tile.id} has an animation, but it doesn't have a Name property, which is required for animation.");
+                    }
+                    else
+                    {
+                        animationDictionary.Add(property.value, animationChain);
+                    }
+
+                }
+
+            }
+
+            toReturn.Animation = new LayeredTileMapAnimation(animationDictionary);
+
             return toReturn;
         }
 
         public void AnimateSelf()
         {
-            if(Animation != null)
+            if (Animation != null)
             {
                 Animation.Activity(this);
             }
@@ -395,14 +473,12 @@ namespace FlatRedBall.TileGraphics
 
         public void AddToManagers()
         {
-            foreach (var item in this.mMapLists)
-            {
-                item.AddToManagers();
-            }
+            AddToManagers(null);
         }
 
         public void AddToManagers(FlatRedBall.Graphics.Layer layer)
         {
+            SpriteManager.AddPositionedObject(this);
             foreach (var item in this.mMapLists)
             {
                 item.AddToManagers(layer);
@@ -435,6 +511,30 @@ namespace FlatRedBall.TileGraphics
             }
         }
 
+        public LayeredTileMap Clone()
+        {
+            var toReturn = base.Clone<LayeredTileMap>();
+
+            toReturn.mMapLists = new Math.PositionedObjectList<MapDrawableBatch>();
+
+            foreach (var item in this.MapLayers)
+            {
+                var clonedLayer = item.Clone();
+                if(item.Parent == this)
+                {
+                    clonedLayer.AttachTo(toReturn, false);
+                }
+                toReturn.mMapLists.Add(clonedLayer);
+            }
+
+            toReturn.ShapeCollections = new List<Math.Geometry.ShapeCollection>();
+            foreach (var shapeCollection in this.ShapeCollections)
+            {
+                toReturn.ShapeCollections.Add(shapeCollection.Clone());
+            }
+
+            return toReturn;
+        }
 
         public void RemoveFromManagersOneWay()
         {

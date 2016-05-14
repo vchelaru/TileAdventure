@@ -26,7 +26,7 @@ using Texture2D = Microsoft.Xna.Framework.Graphics.Texture2D;
 
 namespace TileAdventure.Entities
 {
-	public partial class MapNavigationTrigger
+	public partial class StartPoint
 	{
         /// <summary>
         /// Initialization logic which is execute only one time for this Entity (unless the Entity is pooled).
@@ -35,7 +35,8 @@ namespace TileAdventure.Entities
         /// </summary>
 		private void CustomInitialize()
 		{
-            this.Collision.Visible = DebuggingVariables.ShowShapes;
+            this.CircleInstance.Visible = DebuggingVariables.ShowShapes;
+
         }
 
         private void CustomActivity()
