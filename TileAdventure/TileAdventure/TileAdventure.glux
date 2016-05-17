@@ -777,4 +777,9 @@
   <TranslatedFiles />
   <ApplyToFixedResolutionPlatforms>true</ApplyToFixedResolutionPlatforms>
   <ExternallyBuiltFileDirectory>../../</ExternallyBuiltFileDirectory>
+  <PluginData>
+    <RequiredPlugins>
+      <string>Tiled Plugin</string>
+    </RequiredPlugins>
+  </PluginData>
 </GlueProjectSave>

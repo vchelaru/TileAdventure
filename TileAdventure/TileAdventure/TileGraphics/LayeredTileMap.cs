@@ -520,7 +520,7 @@ namespace FlatRedBall.TileGraphics
             foreach (var item in this.MapLayers)
             {
                 var clonedLayer = item.Clone();
-                if(item.Parent == this)
+                if (item.Parent == this)
                 {
                     clonedLayer.AttachTo(toReturn, false);
                 }
