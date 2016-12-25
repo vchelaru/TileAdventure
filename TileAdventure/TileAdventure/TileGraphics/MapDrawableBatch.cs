@@ -36,11 +36,15 @@ namespace FlatRedBall.TileGraphics
         private static BasicEffect mBasicEffect;
         private static AlphaTestEffect mAlphaTestEffect;
 
-        #region XML Docs
         /// <summary>
-        /// The vertices used to draw the shape
+        /// The vertices used to draw the map.
         /// </summary>
-        #endregion
+        /// <remarks>
+        /// Coordinate order is:
+        /// 3   2
+        ///
+        /// 0   1
+        /// </remarks>
         protected VertexPositionTexture[] mVertices;
         protected Texture2D mTexture;
         #region XML Docs
@@ -48,7 +52,7 @@ namespace FlatRedBall.TileGraphics
         /// The indices to draw the shape
         /// </summary>
         #endregion
-        protected short[] mIndices;
+        protected int[] mIndices;
 
         Dictionary<string, List<int>> mNamedTileOrderedIndexes = new Dictionary<string, List<int>>();
 
@@ -61,11 +65,11 @@ namespace FlatRedBall.TileGraphics
 
         #region Properties
 
-        public List<NamedValue> Properties
+        public List<TMXGlueLib.DataTypes.NamedValue> Properties
         {
             get;
             private set;
-        } = new List<NamedValue>();
+        } = new List<TMXGlueLib.DataTypes.NamedValue>();
 
         public SortAxis SortAxis
         {
@@ -183,7 +187,7 @@ namespace FlatRedBall.TileGraphics
 
             mTexture = texture;
             mVertices = new VertexPositionTexture[4 * numberOfTiles];
-            mIndices = new short[6 * numberOfTiles];
+            mIndices = new int[6 * numberOfTiles];
         }
 
         #region XML Docs
@@ -202,7 +206,7 @@ namespace FlatRedBall.TileGraphics
 
             mTexture = texture;
             mVertices = new VertexPositionTexture[4 * numberOfTiles];
-            mIndices = new short[6 * numberOfTiles];
+            mIndices = new int[6 * numberOfTiles];
 
             mTileset = new Tileset(texture, textureTileDimensionWidth, textureTileDimensionHeight);
         }
@@ -761,12 +765,12 @@ namespace FlatRedBall.TileGraphics
             mVertices[currentVertex + 3] = new VertexPositionTexture(new Vector3(xOffset + 0f, yOffset + height, zOffset), new Vector2(texture.X, texture.Z));
 
             // create indices
-            mIndices[currentIndex + 0] = (short)(currentVertex + 0);
-            mIndices[currentIndex + 1] = (short)(currentVertex + 1);
-            mIndices[currentIndex + 2] = (short)(currentVertex + 2);
-            mIndices[currentIndex + 3] = (short)(currentVertex + 0);
-            mIndices[currentIndex + 4] = (short)(currentVertex + 2);
-            mIndices[currentIndex + 5] = (short)(currentVertex + 3);
+            mIndices[currentIndex + 0] = currentVertex + 0;
+            mIndices[currentIndex + 1] = currentVertex + 1;
+            mIndices[currentIndex + 2] = currentVertex + 2;
+            mIndices[currentIndex + 3] = currentVertex + 0;
+            mIndices[currentIndex + 4] = currentVertex + 2;
+            mIndices[currentIndex + 5] = currentVertex + 3;
 
             mCurrentNumberOfTiles++;
 
@@ -827,43 +831,8 @@ namespace FlatRedBall.TileGraphics
 
             if (numberOfTriangles != 0)
             {
-
-                // Set graphics states
-                FlatRedBallServices.GraphicsDevice.RasterizerState = RasterizerState.CullNone;
-                FlatRedBall.Graphics.Renderer.BlendOperation = BlendOperation.Regular;
-
-                Effect effectTouse = null;
-
-                if (ZBuffered)
-                {
-                    FlatRedBallServices.GraphicsDevice.DepthStencilState = DepthStencilState.Default;
-                    camera.SetDeviceViewAndProjection(mAlphaTestEffect, false);
-
-                    mAlphaTestEffect.World = Matrix.CreateScale(RenderingScale) * base.TransformationMatrix;
-                    mAlphaTestEffect.Texture = mTexture;
-
-                    effectTouse = mAlphaTestEffect;
-                }
-                else
-                {
-                    camera.SetDeviceViewAndProjection(mBasicEffect, false);
-
-                    mBasicEffect.World = Matrix.CreateScale(RenderingScale) * base.TransformationMatrix;
-                    mBasicEffect.Texture = mTexture;
-                    effectTouse = mBasicEffect;
-                }
-
-
-                // We won't need to use any other kind of texture
-                // address mode besides clamp, and clamp is required
-                // on the "Reach" profile when the texture is not power
-                // of two.  Let's set it to clamp here so that we don't crash
-                // on non-power-of-two textures.
-                TextureAddressMode oldTextureAddressMode = Renderer.TextureAddressMode;
-                Renderer.TextureAddressMode = TextureAddressMode.Clamp;
-
-
-
+                TextureAddressMode oldTextureAddressMode;
+                Effect effectTouse = PrepareRenderingStates(camera, out oldTextureAddressMode);
 
                 foreach (EffectPass pass in effectTouse.CurrentTechnique.Passes)
                 {
@@ -871,6 +840,7 @@ namespace FlatRedBall.TileGraphics
 
                     pass.Apply();
 
+                    int numberVertsToDraw = lastVertIndex - firstVertIndex;
 
                     // Right now this uses the (slower) DrawUserIndexedPrimitives
                     // It could use DrawIndexedPrimitives instead for much faster performance,
@@ -879,10 +849,11 @@ namespace FlatRedBall.TileGraphics
                     FlatRedBallServices.GraphicsDevice.DrawUserIndexedPrimitives<VertexPositionTexture>(
                         PrimitiveType.TriangleList,
                         mVertices,
-                        firstVertIndex, // 0, 
-                        lastVertIndex - firstVertIndex,// mVertices.Length,
+                        firstVertIndex,
+                        numberVertsToDraw,
                         mIndices,
                         indexStart, numberOfTriangles);
+
                 }
 
                 Renderer.TextureAddressMode = oldTextureAddressMode;
@@ -892,6 +863,49 @@ namespace FlatRedBall.TileGraphics
                 }
             }
 
+        }
+
+        private Effect PrepareRenderingStates(Camera camera, out TextureAddressMode oldTextureAddressMode)
+        {
+            // Set graphics states
+            FlatRedBallServices.GraphicsDevice.RasterizerState = RasterizerState.CullNone;
+            FlatRedBall.Graphics.Renderer.BlendOperation = BlendOperation.Regular;
+
+            Effect effectTouse = null;
+
+            if (ZBuffered)
+            {
+                FlatRedBallServices.GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+                camera.SetDeviceViewAndProjection(mAlphaTestEffect, false);
+
+                mAlphaTestEffect.World = Matrix.CreateScale(RenderingScale) * base.TransformationMatrix;
+                mAlphaTestEffect.Texture = mTexture;
+
+                effectTouse = mAlphaTestEffect;
+            }
+            else
+            {
+                camera.SetDeviceViewAndProjection(mBasicEffect, false);
+
+                mBasicEffect.World = Matrix.CreateScale(RenderingScale) * base.TransformationMatrix;
+                mBasicEffect.Texture = mTexture;
+                effectTouse = mBasicEffect;
+            }
+
+
+
+            // We won't need to use any other kind of texture
+            // address mode besides clamp, and clamp is required
+            // on the "Reach" profile when the texture is not power
+            // of two.  Let's set it to clamp here so that we don't crash
+            // on non-power-of-two textures.
+            oldTextureAddressMode = Renderer.TextureAddressMode;
+            Renderer.TextureAddressMode = TextureAddressMode.Clamp;
+
+
+
+
+            return effectTouse;
         }
 
         private void GetRenderingIndexValues(Camera camera, out int firstVertIndex, out int lastVertIndex, out int indexStart, out int numberOfTriangles)
@@ -1150,7 +1164,7 @@ namespace FlatRedBall.TileGraphics
             var oldIndexes = mIndices;
 
             mVertices = new VertexPositionTexture[totalNumberOfVerts];
-            mIndices = new short[totalNumberOfIndexes];
+            mIndices = new int[totalNumberOfIndexes];
 
             oldVerts.CopyTo(mVertices, 0);
             oldIndexes.CopyTo(mIndices, 0);
@@ -1172,7 +1186,7 @@ namespace FlatRedBall.TileGraphics
 
                 for (int i = startIndex; i < startIndex + numberOfIndices; i++)
                 {
-                    mIndices[i] += (short)startVert;
+                    mIndices[i] += startVert;
                 }
 
                 for (int i = startVert; i < startVert + numberOfNewVertices; i++)

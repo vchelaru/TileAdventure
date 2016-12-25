@@ -170,6 +170,20 @@
       <DependentUpon>TestScreen.cs</DependentUpon>
     </Compile>
     <Compile Include="Setup\CameraSetup.cs" />
+    <Compile Include="StateInterpolation\Back.cs" />
+    <Compile Include="StateInterpolation\Bounce.cs" />
+    <Compile Include="StateInterpolation\Circular.cs" />
+    <Compile Include="StateInterpolation\Cubic.cs" />
+    <Compile Include="StateInterpolation\Elastic.cs" />
+    <Compile Include="StateInterpolation\Exponential.cs" />
+    <Compile Include="StateInterpolation\Linear.cs" />
+    <Compile Include="StateInterpolation\Quadratic.cs" />
+    <Compile Include="StateInterpolation\Quartic.cs" />
+    <Compile Include="StateInterpolation\Quintic.cs" />
+    <Compile Include="StateInterpolation\ShakeTweener.cs" />
+    <Compile Include="StateInterpolation\Sinusoidal.cs" />
+    <Compile Include="StateInterpolation\Tweener.cs" />
+    <Compile Include="StateInterpolation\TweenerManager.cs" />
     <Compile Include="TileCollisions\TileShapeCollection.cs" />
     <Compile Include="TileEntities\TileEntityInstantiator.cs" />
     <Compile Include="TileGraphics\AbstractMapLayer.cs" />

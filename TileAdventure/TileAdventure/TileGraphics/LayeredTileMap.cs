@@ -144,6 +144,8 @@ namespace FlatRedBall.TileGraphics
 
         public LayeredTileMapAnimation Animation { get; set; }
 
+        public List<NamedValue> MapProperties { get; set; }
+
 
         IVisible IVisible.Parent
         {
@@ -328,6 +330,11 @@ namespace FlatRedBall.TileGraphics
         {
             TiledMapSave tms = TiledMapSave.FromFile(fileName);
 
+            // Ultimately properties are tied to tiles by the tile name.
+            // If a tile has no name but it has properties, those properties
+            // will be lost in the conversion. Therefore, we have to add name properties.
+            tms.NameUnnamedTilesetTiles();
+
 
             string directory = FlatRedBall.IO.FileManager.GetDirectory(fileName);
 
@@ -362,7 +369,8 @@ namespace FlatRedBall.TileGraphics
                             matchingLayer.Properties.Add(new NamedValue
                             {
                                 Name = propertyValues.StrippedName,
-                                Value = propertyValues.value
+                                Value = propertyValues.value,
+                                Type = propertyValues.Type
                             });
                         }
 
@@ -385,7 +393,8 @@ namespace FlatRedBall.TileGraphics
                             List<NamedValue> namedValues = new List<NamedValue>();
                             foreach (var prop in tile.properties)
                             {
-                                namedValues.Add(new NamedValue() { Name = prop.StrippedName, Value = prop.value });
+                                namedValues.Add(new NamedValue()
+                                { Name = prop.StrippedName, Value = prop.value, Type = prop.Type });
                             }
 
                             toReturn.Properties.Add(name, namedValues);
@@ -460,6 +469,12 @@ namespace FlatRedBall.TileGraphics
 
             toReturn.Animation = new LayeredTileMapAnimation(animationDictionary);
 
+            toReturn.MapProperties = tms.properties
+                .Select(propertySave => new NamedValue
+                    { Name = propertySave.name, Value = propertySave.value, Type = propertySave.Type })
+                .ToList();
+
+
             return toReturn;
         }
 
@@ -478,7 +493,14 @@ namespace FlatRedBall.TileGraphics
 
         public void AddToManagers(FlatRedBall.Graphics.Layer layer)
         {
-            SpriteManager.AddPositionedObject(this);
+            bool isAlreadyManaged = SpriteManager.ManagedPositionedObjects
+                .Contains(this);
+
+            // This allows AddToManagers to be called multiple times, so it can be added to multiple layers
+            if (!isAlreadyManaged)
+            {
+                SpriteManager.AddPositionedObject(this);
+            }
             foreach (var item in this.mMapLists)
             {
                 item.AddToManagers(layer);
@@ -544,6 +566,8 @@ namespace FlatRedBall.TileGraphics
                 SpriteManager.RemoveDrawableBatch(this.mMapLists[i]);
             }
 
+            SpriteManager.RemovePositionedObject(this);
+
             this.mMapLists.MakeTwoWay();
         }
 
@@ -558,9 +582,12 @@ namespace FlatRedBall.TileGraphics
                 SpriteManager.RemoveDrawableBatch(mMapLists[i]);
             }
 
+            SpriteManager.RemovePositionedObject(this);
+
             mMapLists.MakeTwoWay();
         }
     }
+
 
 
     public static class LayeredTileMapExtensions
@@ -574,27 +601,42 @@ namespace FlatRedBall.TileGraphics
 
             foreach (var layer in map.MapLayers)
             {
-                List<int> indexes = new List<int>();
-
-                foreach (var itemThatPasses in filteredInfos)
-                {
-                    string tileName = itemThatPasses
-                        .FirstOrDefault(item => item.Name.ToLowerInvariant() == "name")
-                        .Value as string;
-
-
-                    if (layer.NamedTileOrderedIndexes.ContainsKey(tileName))
-                    {
-                        var intsOnThisLayer =
-                            layer.NamedTileOrderedIndexes[tileName];
-
-                        indexes.AddRange(intsOnThisLayer);
-                    }
-                }
-
-
-                layer.RemoveQuads(indexes);
+                RemoveTilesFromLayer(filteredInfos, layer);
             }
+        }
+
+        public static void RemoveTiles(this MapDrawableBatch layer,
+            Func<List<NamedValue>, bool> predicate,
+            Dictionary<string, List<NamedValue>> Properties)
+        {
+            // Force execution now for performance reasons
+            var filteredInfos = Properties.Values.Where(predicate).ToList();
+
+            RemoveTilesFromLayer(filteredInfos, layer);
+        }
+
+        private static void RemoveTilesFromLayer(List<List<NamedValue>> filteredInfos, MapDrawableBatch layer)
+        {
+            List<int> indexes = new List<int>();
+
+            foreach (var itemThatPasses in filteredInfos)
+            {
+                string tileName = itemThatPasses
+                    .FirstOrDefault(item => item.Name.ToLowerInvariant() == "name")
+                    .Value as string;
+
+
+                if (layer.NamedTileOrderedIndexes.ContainsKey(tileName))
+                {
+                    var intsOnThisLayer =
+                        layer.NamedTileOrderedIndexes[tileName];
+
+                    indexes.AddRange(intsOnThisLayer);
+                }
+            }
+
+
+            layer.RemoveQuads(indexes);
         }
     }
 }

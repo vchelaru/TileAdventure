@@ -19,10 +19,10 @@ namespace FlatRedBall.TileCollisions
         float mBottomSeedY = 0;
         float mGridSize;
         bool mVisible = true;
-	
+
 
         bool mFirstTimeSortAxisSet = true;
-		
+
         #endregion
 
         #region Properties
@@ -49,14 +49,14 @@ namespace FlatRedBall.TileCollisions
             get { return mGridSize; }
             set
             {
-				#if DEBUG
+#if DEBUG
                 if (value < 0)
                 {
                     throw new Exception("GridSize needs to be positive");
                 }
-				#endif
-			
-			
+#endif
+
+
                 mGridSize = value;
                 mShapes.MaxAxisAlignedRectanglesScale = mGridSize;
             }
@@ -66,7 +66,7 @@ namespace FlatRedBall.TileCollisions
         {
             get { return mShapes.AxisAlignedRectangles; }
         }
-        
+
         public string Name { get; set; }
 
         public bool Visible
@@ -108,7 +108,7 @@ namespace FlatRedBall.TileCollisions
             return toReturn;
         }
 
-        
+
         public bool CollideAgainstSolid(Polygon movableObject)
         {
             bool toReturn = false;
@@ -128,22 +128,34 @@ namespace FlatRedBall.TileCollisions
         {
             return mShapes.CollideAgainst(circle, true, mSortAxis);
         }
-		
+
+        public bool CollideAgainst(ICollidable collidable)
+        {
+            return mShapes.CollideAgainst(collidable.Collision, true, mSortAxis);
+        }
+
         public bool CollideAgainstSolid(ICollidable collidable)
         {
             bool toReturn = false;
 
-            toReturn = mShapes.CollideAgainstBounce(collidable.Collision, 1, 0, 0);
+            toReturn = mShapes.CollideAgainstBounce(collidable.Collision, true, mSortAxis, 1, 0, 0);
 
             return toReturn;
         }
 
+        public bool CollideAgainstBounce(ICollidable collidable, float elasticity)
+        {
+            bool toReturn = false;
 
+            toReturn = mShapes.CollideAgainstBounce(collidable.Collision, true, mSortAxis, 1, 0, elasticity);
+
+            return toReturn;
+        }
 
         public AxisAlignedRectangle GetTileAt(float x, float y)
         {
-            float roundedX = MathFunctions.RoundFloat(x, GridSize, mLeftSeedX + GridSize/2.0f);
-            float roundedY = MathFunctions.RoundFloat(y, GridSize, mBottomSeedY + GridSize/2.0f);
+            float roundedX = MathFunctions.RoundFloat(x, GridSize, mLeftSeedX + GridSize / 2.0f);
+            float roundedY = MathFunctions.RoundFloat(y, GridSize, mBottomSeedY + GridSize / 2.0f);
             float keyValue = GetKeyValue(roundedX, roundedY);
 
             float keyValueBefore = keyValue - GridSize / 2.0f;
@@ -218,7 +230,7 @@ namespace FlatRedBall.TileCollisions
         public void RemoveCollisionAtWorld(float x, float y)
         {
             AxisAlignedRectangle existing = GetTileAt(x, y);
-            if(existing != null)
+            if (existing != null)
             {
                 ShapeManager.Remove(existing);
 
@@ -254,7 +266,7 @@ namespace FlatRedBall.TileCollisions
                 {
                     below.RepositionDirections |= RepositionDirections.Up;
                 }
-                
+
 
             }
 
@@ -358,50 +370,74 @@ namespace FlatRedBall.TileCollisions
     }
 	
 	
-
+    
     public static class TileShapeCollectionLayeredTileMapExtensions
     {
-        // This was not originally public but made public for situations where users want to 
-        // manually specify which tiles to use rather than relying on the HasCollision methods.
+        public static void AddCollisionFrom(this TileShapeCollection tileShapeCollection,
+            LayeredTileMap layeredTileMap, string nameToUse)
+        {
+            AddCollisionFrom(tileShapeCollection, layeredTileMap,
+                new List<string> { nameToUse });
+        }
+
         public static void AddCollisionFrom(this TileShapeCollection tileShapeCollection,
             LayeredTileMap layeredTileMap, IEnumerable<string> namesToUse)
         {
-            // prob need to clear out the tileShapeCollection
-
-            float dimension = float.NaN;
-            float dimensionHalf = 0;
-            foreach (var layer in layeredTileMap.MapLayers)
+            Func<List<TMXGlueLib.DataTypes.NamedValue>, bool> predicate = (list) =>
             {
+                var nameProperty = list.FirstOrDefault(item => item.Name.ToLower() == "name");
 
-                var dictionary = layer.NamedTileOrderedIndexes;
+                return namesToUse.Contains(nameProperty.Value);
+            };
 
-                foreach (var name in namesToUse)
+            AddCollisionFrom(tileShapeCollection, layeredTileMap, predicate);
+
+        }
+
+        public static void AddCollisionFrom(this TileShapeCollection tileShapeCollection, LayeredTileMap layeredTileMap,
+            Func<List<TMXGlueLib.DataTypes.NamedValue>, bool> predicate)
+        {
+            var properties = layeredTileMap.Properties;
+
+            foreach (var kvp in properties)
+            {
+                string name = kvp.Key;
+                var namedValues = kvp.Value;
+
+                if (predicate(namedValues))
                 {
-                    if (dictionary.ContainsKey(name))
+                    float dimension = float.NaN;
+                    float dimensionHalf = 0;
+                    foreach (var layer in layeredTileMap.MapLayers)
                     {
-                        var indexList = dictionary[name];
+                        var dictionary = layer.NamedTileOrderedIndexes;
 
-                        foreach (var index in indexList)
+                        if (dictionary.ContainsKey(name))
                         {
-                            float left;
-                            float bottom;
-                            layer.GetBottomLeftWorldCoordinateForOrderedTile(index, out left, out bottom);
+                            var indexList = dictionary[name];
 
-                            if (float.IsNaN(dimension))
+                            foreach (var index in indexList)
                             {
-                                dimension = layer.Vertices[(index * 4) + 1].Position.X - left;
-                                dimensionHalf = dimension / 2.0f;
-                                tileShapeCollection.GridSize = dimension;
-                            }
+                                float left;
+                                float bottom;
+                                layer.GetBottomLeftWorldCoordinateForOrderedTile(index, out left, out bottom);
 
-                            tileShapeCollection.AddCollisionAtWorld(left + dimensionHalf,
-                                bottom + dimensionHalf);
+                                if (float.IsNaN(dimension))
+                                {
+                                    dimension = layer.Vertices[(index * 4) + 1].Position.X - left;
+                                    dimensionHalf = dimension / 2.0f;
+                                    tileShapeCollection.GridSize = dimension;
+                                }
+
+                                tileShapeCollection.AddCollisionAtWorld(left + dimensionHalf,
+                                    bottom + dimensionHalf);
+                            }
                         }
                     }
                 }
             }
-        }
 
+        }
 
         static void AddCollisionFrom(this TileShapeCollection tileShapeCollection,
             Scene scene, IEnumerable<string> namesToUse)
@@ -441,40 +477,6 @@ namespace FlatRedBall.TileCollisions
             tileShapeCollection.AddCollisionFrom(layeredTileMap, tilesWithCollision);
 
         }
-
-
-        //public static void AddCollisionFrom(this TileShapeCollection tileShapeCollection,
-        //    LayeredTileMap layeredTileMap, IEnumerable<TileMapInfo> tileMapInfos)
-        //{
-        //    var stringEnum = tileMapInfos.Where(item => item.HasCollision).Select(item=>item.Name);
-
-        //    tileShapeCollection.AddCollisionFrom(layeredTileMap, stringEnum);
-        //}
-
-        //public static void AddCollisionFrom(this TileShapeCollection tileShapeCollection,
-        //    LayeredTileMap layeredTileMap, Dictionary<string, TileMapInfo> tileMapInfos)
-        //{
-        //    var stringEnum = tileMapInfos.Values.Where(item => item.HasCollision).Select(item=>item.Name);
-
-        //    tileShapeCollection.AddCollisionFrom(layeredTileMap, stringEnum);
-        //}
-
-        //public static void AddCollisionFrom(this TileShapeCollection tileShapeCollection,
-        //    Scene scene, IEnumerable<TileMapInfo> tileMapInfos)
-        //{
-        //    var stringEnum = tileMapInfos.Where(item => item.HasCollision).Select(item => item.Name);
-
-        //    tileShapeCollection.AddCollisionFrom(scene, stringEnum);
-        //}
-
-        //public static void AddCollisionFrom(this TileShapeCollection tileShapeCollection,
-        //    Scene scene, Dictionary<string, TileMapInfo> tileMapInfos)
-        //{
-        //    var stringEnum = tileMapInfos.Values.Where(item => item.HasCollision).Select(item => item.Name);
-
-        //    tileShapeCollection.AddCollisionFrom(scene, stringEnum);
-        //}
-
 
     }
 

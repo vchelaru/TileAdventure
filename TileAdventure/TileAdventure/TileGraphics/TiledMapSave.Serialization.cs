@@ -172,23 +172,26 @@ namespace TMXGlueLib
         {
             List<string> referencedFiles = new List<string>();
 
-            foreach (var tileset in this.Tilesets)
+            if(this.Tilesets != null)
             {
-                if(!string.IsNullOrEmpty(tileset.Source ))
+                foreach (var tileset in this.Tilesets)
                 {
-                    referencedFiles.Add(tileset.Source);
-                }
-                else if (tileset != null && tileset.Images.Length != 0)
-                {
-                    var image = tileset.Images[0];
+                    if(!string.IsNullOrEmpty(tileset.Source ))
+                    {
+                        referencedFiles.Add(tileset.Source);
+                    }
+                    else if (tileset?.Images != null && tileset.Images.Length != 0)
+                    {
+                        var image = tileset.Images[0];
 
-                    string fileName = image.Source;
+                        string fileName = image.Source;
                     
-                    // keep it relative
-                    referencedFiles.Add(fileName);
+                        // keep it relative
+                        referencedFiles.Add(fileName);
+
+                    }
 
                 }
-
             }
 
 
@@ -214,6 +217,9 @@ namespace TMXGlueLib
             get;
             set;
         }
+
+        [XmlAttribute("type")]
+        public string Type { get; set; }
 
         [XmlIgnore]
         public string StrippedName
@@ -558,7 +564,9 @@ namespace TMXGlueLib
         public int length { get; set; }
     }
 
+#if !UWP
     [Serializable]
+#endif
     public partial class mapObjectgroup : AbstractMapLayer
     {
         private mapObjectgroupObject[] objectField;
@@ -734,7 +742,7 @@ namespace TMXGlueLib
         }
 
         /// <remarks/>
-        [XmlAttribute()]
+        [XmlAttribute("x")]
         public double x
         {
             get
@@ -748,7 +756,7 @@ namespace TMXGlueLib
         }
 
         /// <remarks/>
-        [XmlAttribute()]
+        [XmlAttribute("y")]
         public double y
         {
             get
@@ -763,11 +771,11 @@ namespace TMXGlueLib
 
         /// <remarks/>
         [XmlAttribute()]
-        public int width { get; set; }
+        public float width { get; set; }
 
         /// <remarks/>
         [XmlAttribute()]
-        public int height { get; set; }
+        public float height { get; set; }
 
         [XmlAttribute("rotation")]
         public double Rotation
