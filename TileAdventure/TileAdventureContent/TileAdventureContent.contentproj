@@ -85,10 +85,6 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Name>Level1</Name>
     </None>
-    <None Include="Screens\GameScreen\Levels\Level1Npcs.csv">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Name>Level1Npcs</Name>
-    </None>
     <None Include="Screens\GameScreen\Levels\Level2.tmx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Name>Level2</Name>

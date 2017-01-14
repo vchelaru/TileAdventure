@@ -50,12 +50,6 @@
           <ProjectsToExcludeFrom />
         </ReferencedFileSave>
         <ReferencedFileSave>
-          <Name>Screens/GameScreen/Levels/Level1Npcs.csv</Name>
-          <IsSharedStatic>true</IsSharedStatic>
-          <CreatesDictionary>true</CreatesDictionary>
-          <ProjectsToExcludeFrom />
-        </ReferencedFileSave>
-        <ReferencedFileSave>
           <Name>Screens/GameScreen/Levels/TestLevel.tmx</Name>
           <IsSharedStatic>true</IsSharedStatic>
           <LoadedOnlyWhenReferenced>true</LoadedOnlyWhenReferenced>
@@ -248,9 +242,15 @@
           <DefaultValue xsi:type="xsd:float">60</DefaultValue>
         </CustomVariable>
       </CustomVariables>
+      <ImplementsIDrawableBatch>false</ImplementsIDrawableBatch>
       <Name>Entities\Character</Name>
       <NamedObjects>
         <NamedObjectSave>
+          <CustomProperty>
+            <Type>float</Type>
+            <Member>TextureScale</Member>
+            <ValueAsFloat>1</ValueAsFloat>
+          </CustomProperty>
           <CustomProperty>
             <Type>AnimationChainList</Type>
             <Member>AnimationChains</Member>
@@ -260,11 +260,6 @@
             <Type>string</Type>
             <Member>CurrentChainName</Member>
             <ValueAsString>WalkDown</ValueAsString>
-          </CustomProperty>
-          <CustomProperty>
-            <Type>float</Type>
-            <Member>TextureScale</Member>
-            <ValueAsFloat>1</ValueAsFloat>
           </CustomProperty>
           <SourceType>FlatRedBallType</SourceType>
           <SourceFile />
@@ -278,12 +273,12 @@
         <NamedObjectSave>
           <CustomProperty>
             <Type>float</Type>
-            <Member>Height</Member>
+            <Member>Width</Member>
             <ValueAsFloat>15</ValueAsFloat>
           </CustomProperty>
           <CustomProperty>
             <Type>float</Type>
-            <Member>Width</Member>
+            <Member>Height</Member>
             <ValueAsFloat>15</ValueAsFloat>
           </CustomProperty>
           <SourceType>FlatRedBallType</SourceType>
@@ -300,12 +295,12 @@
         <NamedObjectSave>
           <CustomProperty>
             <Type>float</Type>
-            <Member>Height</Member>
+            <Member>Width</Member>
             <ValueAsFloat>15</ValueAsFloat>
           </CustomProperty>
           <CustomProperty>
             <Type>float</Type>
-            <Member>Width</Member>
+            <Member>Height</Member>
             <ValueAsFloat>15</ValueAsFloat>
           </CustomProperty>
           <SourceType>FlatRedBallType</SourceType>
@@ -320,9 +315,9 @@
         </NamedObjectSave>
         <NamedObjectSave>
           <CustomProperty>
-            <Type>Color</Type>
-            <Member>Color</Member>
-            <ValueAsString>Yellow</ValueAsString>
+            <Type>float</Type>
+            <Member>Width</Member>
+            <ValueAsFloat>14</ValueAsFloat>
           </CustomProperty>
           <CustomProperty>
             <Type>float</Type>
@@ -330,9 +325,9 @@
             <ValueAsFloat>14</ValueAsFloat>
           </CustomProperty>
           <CustomProperty>
-            <Type>float</Type>
-            <Member>Width</Member>
-            <ValueAsFloat>14</ValueAsFloat>
+            <Type>Color</Type>
+            <Member>Color</Member>
+            <ValueAsString>Yellow</ValueAsString>
           </CustomProperty>
           <SourceType>FlatRedBallType</SourceType>
           <SourceFile />
@@ -387,6 +382,7 @@
           <IsShared>true</IsShared>
         </CustomVariable>
       </CustomVariables>
+      <ImplementsIDrawableBatch>false</ImplementsIDrawableBatch>
       <Name>Entities\DebuggingVariables</Name>
       <Is2D>true</Is2D>
     </EntitySave>
@@ -451,6 +447,7 @@
         </CustomVariable>
       </CustomVariables>
       <ImplementsIVisible>true</ImplementsIVisible>
+      <ImplementsIDrawableBatch>false</ImplementsIDrawableBatch>
       <Name>Entities\DialogDisplay</Name>
       <NamedObjects>
         <NamedObjectSave>
@@ -609,17 +606,18 @@
           <Type>string</Type>
         </CustomVariable>
       </CustomVariables>
+      <ImplementsIDrawableBatch>false</ImplementsIDrawableBatch>
       <Name>Entities\MapNavigationTrigger</Name>
       <NamedObjects>
         <NamedObjectSave>
           <CustomProperty>
             <Type>float</Type>
-            <Member>Height</Member>
+            <Member>Width</Member>
             <ValueAsFloat>15</ValueAsFloat>
           </CustomProperty>
           <CustomProperty>
             <Type>float</Type>
-            <Member>Width</Member>
+            <Member>Height</Member>
             <ValueAsFloat>15</ValueAsFloat>
           </CustomProperty>
           <SourceType>FlatRedBallType</SourceType>
@@ -673,6 +671,7 @@
           <Type>float</Type>
         </CustomVariable>
       </CustomVariables>
+      <ImplementsIDrawableBatch>false</ImplementsIDrawableBatch>
       <Name>Entities\StartPoint</Name>
       <NamedObjects>
         <NamedObjectSave>
@@ -765,9 +764,7 @@
       <GenerateCode>true</GenerateCode>
     </CustomClassSave>
     <CustomClassSave>
-      <CsvFilesUsingThis>
-        <string>Screens/GameScreen/Levels/Level1Npcs.csv</string>
-      </CsvFilesUsingThis>
+      <CsvFilesUsingThis />
       <RequiredProperties />
       <Name>LevelNpc</Name>
       <GenerateCode>true</GenerateCode>
