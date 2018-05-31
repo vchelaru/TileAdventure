@@ -1,18 +1,19 @@
-using TileAdventure.DataTypes;
+﻿using BounceHouse.DataTypes;
 using FlatRedBall.TileGraphics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using TileAdventure.Performance;
+using BounceHouse.Performance;
 using FlatRedBall.Graphics;
 using System.Reflection;
 using TMXGlueLib.DataTypes;
-
+using System.Collections;
 
 namespace FlatRedBall.TileEntities
 {
     public static class TileEntityInstantiator
     {
+        static Dictionary<string, List<IDictionary>> allDictionaries = new Dictionary<string, List<IDictionary>>();
 
         /// <summary>
         /// Creates entities from a single layer for any tile with the EntityToCreate property.
@@ -23,12 +24,12 @@ namespace FlatRedBall.TileEntities
         {
             var entitiesToRemove = new List<string>();
 
-            CreateEntitiesFrom(entitiesToRemove, mapLayer, layeredTileMap.Properties);
+            CreateEntitiesFrom(entitiesToRemove, mapLayer, layeredTileMap.TileProperties);
 
             foreach (var entityToRemove in entitiesToRemove)
             {
                 string remove = entityToRemove;
-                mapLayer.RemoveTiles(t => t.Any(item => item.Name == "EntityToCreate" && item.Value as string == remove), layeredTileMap.Properties);
+                mapLayer.RemoveTiles(t => t.Any(item => (item.Name == "EntityToCreate" || item.Name == "Type") && item.Value as string == remove), layeredTileMap.TileProperties);
             }
 
         }
@@ -39,12 +40,12 @@ namespace FlatRedBall.TileEntities
 
             foreach (var layer in layeredTileMap.MapLayers)
             {
-                CreateEntitiesFrom(entitiesToRemove, layer, layeredTileMap.Properties);
+                CreateEntitiesFrom(entitiesToRemove, layer, layeredTileMap.TileProperties);
             }
             foreach (var entityToRemove in entitiesToRemove)
             {
                 string remove = entityToRemove;
-                layeredTileMap.RemoveTiles(t => t.Any(item => item.Name == "EntityToCreate" && item.Value as string == remove), layeredTileMap.Properties);
+                layeredTileMap.RemoveTiles(t => t.Any(item => (item.Name == "EntityToCreate" || item.Name == "Type") && item.Value as string == remove), layeredTileMap.TileProperties);
             }
             foreach (var shapeCollection in layeredTileMap.ShapeCollections)
             {
@@ -52,9 +53,9 @@ namespace FlatRedBall.TileEntities
                 for (int i = polygons.Count - 1; i > -1; i--)
                 {
                     var polygon = polygons[i];
-                    if (!string.IsNullOrEmpty(polygon.Name) && layeredTileMap.Properties.ContainsKey(polygon.Name))
+                    if (!string.IsNullOrEmpty(polygon.Name) && layeredTileMap.ShapeProperties.ContainsKey(polygon.Name))
                     {
-                        var properties = layeredTileMap.Properties[polygon.Name];
+                        var properties = layeredTileMap.ShapeProperties[polygon.Name];
                         var entityAddingProperty = properties.FirstOrDefault(item => item.Name == "EntityToCreate");
 
                         var entityType = entityAddingProperty.Value as string;
@@ -64,6 +65,7 @@ namespace FlatRedBall.TileEntities
 
                             var entity = factory.CreateNew(null) as PositionedObject;
 
+                            entity.Name = polygon.Name;
                             ApplyPropertiesTo(entity, properties, polygon.Position);
                             shapeCollection.Polygons.Remove(polygon);
 
@@ -91,11 +93,14 @@ namespace FlatRedBall.TileEntities
 
             foreach (var propertyList in propertiesDictionary.Values)
             {
-                if (propertyList.Any(item2 => item2.Name == "EntityToCreate"))
+                var property =
+                    propertyList.FirstOrDefault(item2 => item2.Name == "EntityToCreate" || item2.Name == "Type");
+
+                if (!string.IsNullOrEmpty(property.Name))
                 {
                     var tileName = propertyList.FirstOrDefault(item => item.Name.ToLowerInvariant() == "name").Value as string;
 
-                    var entityType = propertyList.FirstOrDefault(item => item.Name == "EntityToCreate").Value as string;
+                    var entityType = property.Value as string;
 
                     if (!string.IsNullOrEmpty(entityType) && dictionary.ContainsKey(tileName))
                     {
@@ -113,10 +118,8 @@ namespace FlatRedBall.TileEntities
                             entitiesToRemove.Add(entityType);
                             var indexList = dictionary[tileName];
 
-
                             foreach (var tileIndex in indexList)
                             {
-
                                 var entity = factory.CreateNew(flatRedBallLayer) as PositionedObject;
 
                                 ApplyPropertiesTo(entity, layer, tileIndex, propertyList);
@@ -130,9 +133,9 @@ namespace FlatRedBall.TileEntities
 
         private static void ApplyPropertiesTo(PositionedObject entity, MapDrawableBatch layer, int tileIndex, List<NamedValue> propertiesToAssign)
         {
-
             int vertexIndex = tileIndex * 4;
-            var dimension = layer.Vertices[vertexIndex + 1].Position.X - layer.Vertices[vertexIndex].Position.X;
+            var dimension =
+                (layer.Vertices[vertexIndex + 1].Position - layer.Vertices[vertexIndex].Position).Length();
 
             float dimensionHalf = dimension / 2.0f;
 
@@ -140,7 +143,26 @@ namespace FlatRedBall.TileEntities
             float left;
             float bottom;
             layer.GetBottomLeftWorldCoordinateForOrderedTile(tileIndex, out left, out bottom);
-            Microsoft.Xna.Framework.Vector3 position = new Microsoft.Xna.Framework.Vector3(left + dimensionHalf, bottom + dimensionHalf, layer.Z);
+            Microsoft.Xna.Framework.Vector3 position = new Microsoft.Xna.Framework.Vector3(left, bottom, 0);
+
+            var bottomRight = layer.Vertices[tileIndex * 4 + 1].Position;
+
+            float xDifference = bottomRight.X - left;
+            float yDifference = bottomRight.Y - bottom;
+
+            if (yDifference != 0 || xDifference < 0)
+            {
+                float angle = (float)System.Math.Atan2(yDifference, xDifference);
+
+                entity.RotationZ = angle;
+
+            }
+
+            position += entity.RotationMatrix.Right * dimensionHalf;
+            position += entity.RotationMatrix.Up * dimensionHalf;
+
+            position += layer.Position;
+
             ApplyPropertiesTo(entity, propertiesToAssign, position);
         }
 
@@ -156,40 +178,97 @@ namespace FlatRedBall.TileEntities
 
             foreach (var property in propertiesToAssign)
             {
-                var valueToSet = property.Value;
-                valueToSet = SetValueAccordingToType(valueToSet, property.Name, property.Type, entityType);
-                try
-                {
-                    lateBinder.SetValue(entity, property.Name, valueToSet);
-                }
-                catch (InvalidCastException e)
-                {
-                    string assignedType = valueToSet.GetType().ToString() ?? "unknown type";
-                    assignedType = GetFriendlyNameForType(assignedType);
+                // If name is EntityToCreate, skip it:
+                string propertyName = property.Name;
 
-                    string expectedType = "unknown type";
-                    object outValue;
-                    if (lateBinder.TryGetValue(entity, property.Name, out outValue) && outValue != null)
+                bool shouldSet = propertyName != "EntityToCreate";
+
+                if (shouldSet)
+                {
+                    if (propertyName == "name")
                     {
-                        expectedType = outValue.GetType().ToString();
-                        expectedType = GetFriendlyNameForType(expectedType);
+                        propertyName = "Name";
                     }
 
-                    // This means that the property exists but is of a different type. 
-                    string message = $"Attempted to assign the property {property.Name} " +
-                        $"to a value of type {assignedType} but expected {expectedType}. " +
-                        $"Check the property type in your TMX and make sure it matches the type on the entity.";
-                    throw new Exception(message, e);
-                }
-                catch (Exception e)
-                {
-                    // Since this code indiscriminately tries to set properties, it may set properties which don't
-                    // actually exist. Therefore, we tolerate failures.
+                    var valueToSet = property.Value;
 
+                    var propertyType = property.Type;
+
+                    if (string.IsNullOrEmpty(propertyType))
+                    {
+                        propertyType = TryGetPropertyType(entityType, propertyName);
+                    }
+
+                    valueToSet = SetValueAccordingToType(valueToSet, propertyName, propertyType, entityType);
+                    try
+                    {
+                        lateBinder.SetValue(entity, propertyName, valueToSet);
+                    }
+                    catch (InvalidCastException e)
+                    {
+                        string assignedType = valueToSet.GetType().ToString() ?? "unknown type";
+                        assignedType = GetFriendlyNameForType(assignedType);
+
+                        string expectedType = "unknown type";
+                        object outValue;
+                        if (lateBinder.TryGetValue(entity, propertyName, out outValue) && outValue != null)
+                        {
+                            expectedType = outValue.GetType().ToString();
+                            expectedType = GetFriendlyNameForType(expectedType);
+                        }
+
+                        // This means that the property exists but is of a different type. 
+                        string message = $"Attempted to assign the property {propertyName} " +
+                            $"to a value of type {assignedType} but expected {expectedType}. " +
+                            $"Check the property type in your TMX and make sure it matches the type on the entity.";
+                        throw new Exception(message, e);
+                    }
+                    catch (Exception e)
+                    {
+                        // Since this code indiscriminately tries to set properties, it may set properties which don't
+                        // actually exist. Therefore, we tolerate failures.
+                    }
                 }
             }
         }
 
+        private static string TryGetPropertyType(Type entityType, string propertyName)
+        {
+            // todo - cache for perf
+            var property = entityType.GetProperty(propertyName);
+
+            if (property != null)
+            {
+                return property?.PropertyType.FullName;
+            }
+            else
+            {
+                var field = entityType.GetField(propertyName);
+                return field?.FieldType.FullName;
+            }
+        }
+
+        public static void RegisterDictionary<T>(Dictionary<string, T> data)
+        {
+#if DEBUG
+            if(data == null)
+            {
+                throw new ArgumentNullException("The argument data is null - do you need to call LoadStaticContent on the type containing this dictionary?");
+            }
+#endif
+
+            var type = typeof(T).FullName;
+
+            if (allDictionaries.ContainsKey(type) == false)
+            {
+                allDictionaries.Add(type, new List<IDictionary>());
+            }
+
+            if (allDictionaries[type].Contains(data) == false)
+            {
+                allDictionaries[type].Add(data);
+            }
+        }
 
         private static string GetFriendlyNameForType(string type)
         {
@@ -218,7 +297,7 @@ namespace FlatRedBall.TileEntities
             {
                 float floatValue;
 
-                if (float.TryParse((string)valueToSet, out floatValue))
+                if (float.TryParse((string)valueToSet, System.Globalization.NumberStyles.Float, System.Globalization.NumberFormatInfo.InvariantInfo, out floatValue))
                 {
                     valueToSet = floatValue;
                 }
@@ -239,6 +318,19 @@ namespace FlatRedBall.TileEntities
                 var enumType = typesInThisAssembly.FirstOrDefault(item => item.FullName == enumTypeName);
 
                 valueToSet = Enum.Parse(enumType, (string)valueToSet);
+            }
+            else if (valueType != null && allDictionaries.ContainsKey(valueType))
+            {
+                var list = allDictionaries[valueType];
+
+                foreach (var dictionary in list)
+                {
+                    if (dictionary.Contains(valueToSet))
+                    {
+                        valueToSet = dictionary[valueToSet];
+                        break;
+                    }
+                }
             }
             return valueToSet;
         }
@@ -293,7 +385,7 @@ namespace FlatRedBall.TileEntities
             var factory = factories.FirstOrDefault(item =>
             {
                 var type = item.GetType();
-                var methodInfo = type.GetMethod("CreateNew", new[] { typeof(Layer) });
+                var methodInfo = type.GetMethod("CreateNew", new[] { typeof(Layer), typeof(float), typeof(float) });
                 var returntypeString = methodInfo.ReturnType.Name;
 
                 return entityType == returntypeString || entityType.EndsWith("\\" + returntypeString);
