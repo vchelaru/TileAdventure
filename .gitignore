@@ -8,3 +8,4 @@ TileAdventure/TileAdventureContent/obj/
 TileAdventure/TileAdventure/Settings/PluginSettings.xml
 *.csvSettings
 *.Generated.xml
+.vs/
