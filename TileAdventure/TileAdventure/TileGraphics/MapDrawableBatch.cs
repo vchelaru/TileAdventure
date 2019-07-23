@@ -14,6 +14,12 @@ using FlatRedBall.Debugging;
 using FlatRedBall.Math;
 using TMXGlueLib.DataTypes;
 
+#if TILEMAPS_ALPHA_AND_COLOR
+using VertexType = Microsoft.Xna.Framework.Graphics.VertexPositionTexture;
+#else
+using VertexType = Microsoft.Xna.Framework.Graphics.VertexPositionTexture;
+#endif
+
 namespace FlatRedBall.TileGraphics
 {
     public enum SortAxis
@@ -45,7 +51,8 @@ namespace FlatRedBall.TileGraphics
         ///
         /// 0   1
         /// </remarks>
-        protected VertexPositionTexture[] mVertices;
+        protected VertexType[] mVertices;
+
         protected Texture2D mTexture;
         #region XML Docs
         /// <summary>
@@ -58,6 +65,10 @@ namespace FlatRedBall.TileGraphics
 
         private int mCurrentNumberOfTiles = 0;
 
+        public float Red = 1;
+        public float Green = 1;
+        public float Blue = 1;
+        public float Alpha = 1;
 
         private SortAxis mSortAxis;
 
@@ -448,7 +459,6 @@ namespace FlatRedBall.TileGraphics
             toReturn.Name = reducedLayerInfo.Name;
 
             Vector3 position = new Vector3();
-            Vector2 tileDimensions = new Vector2(quadWidth, quadHeight);
 
 
             IEnumerable<TMXGlueLib.DataTypes.ReducedQuadInfo> quads = null;
@@ -466,6 +476,15 @@ namespace FlatRedBall.TileGraphics
 
             foreach (var quad in quads)
             {
+                Vector2 tileDimensions = new Vector2(quadWidth, quadHeight);
+                if (quad.OverridingWidth != null)
+                {
+                    tileDimensions.X = quad.OverridingWidth.Value;
+                }
+                if (quad.OverridingHeight != null)
+                {
+                    tileDimensions.Y = quad.OverridingHeight.Value;
+                }
                 position.X = quad.LeftQuadCoordinate;
                 position.Y = quad.BottomQuadCoordinate;
 
@@ -655,7 +674,7 @@ namespace FlatRedBall.TileGraphics
             }
         }
 
-        private void RegisterName(string name, int tileIndex)
+        public void RegisterName(string name, int tileIndex)
         {
             int throwaway;
             if (!string.IsNullOrEmpty(name) && !int.TryParse(name, out throwaway))
@@ -821,6 +840,7 @@ namespace FlatRedBall.TileGraphics
         ///     4 points defining the boundaries in the texture for the tile.
         ///     (X = left, Y = right, Z = top, W = bottom)
         /// </param>
+        /// <returns>The index of the tile in the tile map, which can be used to modify the painted tile at a later time.</returns>
         public int AddTile(Vector3 bottomLeftPosition, Vector2 dimensions, Vector4 texture)
         {
             int toReturn = mCurrentNumberOfTiles;
@@ -860,10 +880,10 @@ namespace FlatRedBall.TileGraphics
         /// </summary>
         /// <param name="bottomLeftPosition"></param>
         /// <param name="tileDimensions"></param>
-        /// <param name="textureTopLeftX">Top left X coordinate in the core texture</param>
-        /// <param name="textureTopLeftY">Top left Y coordinate in the core texture</param>
-        /// <param name="textureBottomRightX">Bottom right X coordinate in the core texture</param>
-        /// <param name="textureBottomRightY">Bottom right Y coordinate in the core texture</param>
+        /// <param name="textureTopLeftX">Top left pixel X coordinate in the core texture</param>
+        /// <param name="textureTopLeftY">Top left pixel Y coordinate in the core texture</param>
+        /// <param name="textureBottomRightX">Bottom right pixel X coordinate in the core texture</param>
+        /// <param name="textureBottomRightY">Bottom right pixel Y coordinate in the core texture</param>
         public int AddTile(Vector3 bottomLeftPosition, Vector2 tileDimensions, int textureTopLeftX, int textureTopLeftY, int textureBottomRightX, int textureBottomRightY)
         {
             // Form vector4 for AddTile overload
@@ -913,7 +933,8 @@ namespace FlatRedBall.TileGraphics
                     FlatRedBallServices.GraphicsOptions.TextureFilter = this.TextureFilter.Value;
                 }
                 TextureAddressMode oldTextureAddressMode;
-                Effect effectTouse = PrepareRenderingStates(camera, out oldTextureAddressMode);
+                FlatRedBall.Graphics.BlendOperation oldBlendOp;
+                Effect effectTouse = PrepareRenderingStates(camera, out oldTextureAddressMode, out oldBlendOp);
 
                 foreach (EffectPass pass in effectTouse.CurrentTechnique.Passes)
                 {
@@ -938,6 +959,8 @@ namespace FlatRedBall.TileGraphics
                 }
 
                 Renderer.TextureAddressMode = oldTextureAddressMode;
+                FlatRedBall.Graphics.Renderer.BlendOperation = oldBlendOp;
+
                 if (ZBuffered)
                 {
                     FlatRedBallServices.GraphicsDevice.DepthStencilState = DepthStencilState.DepthRead;
@@ -949,12 +972,19 @@ namespace FlatRedBall.TileGraphics
             }
         }
 
-        private Effect PrepareRenderingStates(Camera camera, out TextureAddressMode oldTextureAddressMode)
+        private Effect PrepareRenderingStates(Camera camera, out TextureAddressMode oldTextureAddressMode, out FlatRedBall.Graphics.BlendOperation oldBlendOperation)
         {
             // Set graphics states
             FlatRedBallServices.GraphicsDevice.RasterizerState = RasterizerState.CullNone;
-            FlatRedBall.Graphics.Renderer.BlendOperation = BlendOperation.Regular;
 
+            oldBlendOperation = FlatRedBall.Graphics.Renderer.BlendOperation;
+
+#if TILEMAPS_ALPHA_AND_COLOR
+            FlatRedBall.Graphics.Renderer.BlendOperation = BlendOperation.Regular;
+            FlatRedBall.Graphics.Renderer.ColorOperation = ColorOperation.Modulate;
+#else
+            FlatRedBall.Graphics.Renderer.BlendOperation = BlendOperation.Regular;
+#endif
             Effect effectTouse = null;
 
             if (ZBuffered)
@@ -973,6 +1003,13 @@ namespace FlatRedBall.TileGraphics
 
                 mBasicEffect.World = Matrix.CreateScale(RenderingScale) * base.TransformationMatrix;
                 mBasicEffect.Texture = mTexture;
+
+                mBasicEffect.DiffuseColor = new Vector3(Red, Green, Blue);
+                mBasicEffect.Alpha = Alpha;
+
+#if TILEMAPS_ALPHA_AND_COLOR
+                mBasicEffect.VertexColorEnabled = true;
+#endif
                 effectTouse = mBasicEffect;
             }
 
@@ -985,10 +1022,7 @@ namespace FlatRedBall.TileGraphics
             // on non-power-of-two textures.
             oldTextureAddressMode = Renderer.TextureAddressMode;
             Renderer.TextureAddressMode = TextureAddressMode.Clamp;
-
-
-
-
+            
             return effectTouse;
         }
 
@@ -1247,7 +1281,7 @@ namespace FlatRedBall.TileGraphics
             var oldVerts = mVertices;
             var oldIndexes = mIndices;
 
-            mVertices = new VertexPositionTexture[totalNumberOfVerts];
+            mVertices = new VertexType[totalNumberOfVerts];
             mIndices = new int[totalNumberOfIndexes];
 
             oldVerts.CopyTo(mVertices, 0);

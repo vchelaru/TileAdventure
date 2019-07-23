@@ -14,8 +14,8 @@ namespace FlatRedBall.TileCollisions
 
         ShapeCollection mShapes;
         Axis mSortAxis = Axis.X;
-        float mLeftSeedX = 0;
-        float mBottomSeedY = 0;
+        public float LeftSeedX = 0;
+        public float BottomSeedY = 0;
         float mGridSize;
         bool mVisible = true;
 
@@ -222,8 +222,8 @@ namespace FlatRedBall.TileCollisions
 
         public AxisAlignedRectangle GetRectangleAtPosition(float worldX, float worldY)
         {
-            float middleOfTileX = MathFunctions.RoundFloat(worldX, GridSize, mLeftSeedX + GridSize / 2.0f);
-            float middleOfTileY = MathFunctions.RoundFloat(worldY, GridSize, mBottomSeedY + GridSize / 2.0f);
+            float middleOfTileX = MathFunctions.RoundFloat(worldX, GridSize, LeftSeedX + GridSize / 2.0f);
+            float middleOfTileY = MathFunctions.RoundFloat(worldY, GridSize, BottomSeedY + GridSize / 2.0f);
             float keyValue = GetCoordinateValueForPartitioning(middleOfTileX, middleOfTileY);
 
             float keyValueBefore = keyValue - GridSize / 2.0f;
@@ -243,8 +243,8 @@ namespace FlatRedBall.TileCollisions
 
         public Polygon GetPolygonAtPosition(float worldX, float worldY)
         {
-            float middleOfTileX = MathFunctions.RoundFloat(worldX, GridSize, mLeftSeedX + GridSize / 2.0f);
-            float middleOfTileY = MathFunctions.RoundFloat(worldY, GridSize, mBottomSeedY + GridSize / 2.0f);
+            float middleOfTileX = MathFunctions.RoundFloat(worldX, GridSize, LeftSeedX + GridSize / 2.0f);
+            float middleOfTileY = MathFunctions.RoundFloat(worldY, GridSize, BottomSeedY + GridSize / 2.0f);
             float keyValue = GetCoordinateValueForPartitioning(middleOfTileX, middleOfTileY);
 
             var halfGridSize = GridSize / 2.0f;
@@ -280,8 +280,8 @@ namespace FlatRedBall.TileCollisions
 
         private Polygon GetPolygonAtPosition(float worldX, float worldY, int startInclusive, int endExclusive)
         {
-            float middleOfTileX = MathFunctions.RoundFloat(worldX, GridSize, mLeftSeedX + GridSize / 2.0f);
-            float middleOfTileY = MathFunctions.RoundFloat(worldY, GridSize, mBottomSeedY + GridSize / 2.0f);
+            float middleOfTileX = MathFunctions.RoundFloat(worldX, GridSize, LeftSeedX + GridSize / 2.0f);
+            float middleOfTileY = MathFunctions.RoundFloat(worldY, GridSize, BottomSeedY + GridSize / 2.0f);
 
             var halfGridSize = GridSize / 2.0f;
 
@@ -333,8 +333,8 @@ namespace FlatRedBall.TileCollisions
                 // subtract half width/
                 // height so we can use the
                 // bottom/left
-                float roundedX = MathFunctions.RoundFloat(x - GridSize / 2.0f, GridSize, mLeftSeedX);
-                float roundedY = MathFunctions.RoundFloat(y - GridSize / 2.0f, GridSize, mBottomSeedY);
+                float roundedX = MathFunctions.RoundFloat(x - GridSize / 2.0f, GridSize, LeftSeedX);
+                float roundedY = MathFunctions.RoundFloat(y - GridSize / 2.0f, GridSize, BottomSeedY);
 
                 AxisAlignedRectangle newAar = new AxisAlignedRectangle();
                 newAar.Width = GridSize;
@@ -657,6 +657,44 @@ namespace FlatRedBall.TileCollisions
 
         }
 
+        public static void AddCollisionFrom(this TileShapeCollection tileShapeCollection,
+            MapDrawableBatch layer, LayeredTileMap layeredTileMap, Func<List<TMXGlueLib.DataTypes.NamedValue>, bool> predicate)
+        {
+            var properties = layeredTileMap.TileProperties;
+
+            foreach (var kvp in properties)
+            {
+                string name = kvp.Key;
+                var namedValues = kvp.Value;
+
+                if (predicate(namedValues))
+                {
+                    float dimension = layeredTileMap.WidthPerTile.Value;
+                    float dimensionHalf = dimension / 2.0f;
+                    tileShapeCollection.GridSize = dimension;
+
+                    var dictionary = layer.NamedTileOrderedIndexes;
+
+                    if (dictionary.ContainsKey(name))
+                    {
+                        var indexList = dictionary[name];
+
+                        foreach (var index in indexList)
+                        {
+                            float left;
+                            float bottom;
+                            layer.GetBottomLeftWorldCoordinateForOrderedTile(index, out left, out bottom);
+
+                            var centerX = left + dimensionHalf;
+                            var centerY = bottom + dimensionHalf;
+                            tileShapeCollection.AddCollisionAtWorld(centerX,
+                                centerY);
+                        }
+                    }
+                }
+            }
+        }
+
         public static void AddCollisionFrom(this TileShapeCollection tileShapeCollection, LayeredTileMap layeredTileMap,
             Func<List<TMXGlueLib.DataTypes.NamedValue>, bool> predicate)
         {
@@ -736,6 +774,12 @@ namespace FlatRedBall.TileCollisions
             tileShapeCollection.AddCollisionFrom(
                 layeredTileMap, (list) => list.Any(item => item.Name == propertyName));
 
+        }
+
+        public static void AddCollisionFromTilesWithType(this TileShapeCollection tileShapeCollection, LayeredTileMap layeredTileMap, string type)
+        {
+            tileShapeCollection.AddCollisionFrom(
+                layeredTileMap, (list) => list.Any(item => item.Name == "Type" && (item.Value as string) == type));
         }
 
         public static void AddMergedCollisionFromTilesWithProperty(this TileShapeCollection tileShapeCollection, LayeredTileMap layeredTileMap, string propertyName)

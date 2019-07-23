@@ -298,7 +298,6 @@ namespace TMXGlueLib
 
         private float _offsetX;
         private float _offsetY;
-        private float _opacity;
 
         List<property> mProperties = new List<property>();
 
@@ -356,9 +355,9 @@ namespace TMXGlueLib
         [XmlAttribute("opacity")]
         public float Opacity
         {
-            get { return _opacity; }
-            set { _opacity = value; }
-        }
+            get;
+            set;
+        } = 1.0f;
 
         [XmlAttribute("offsetx")]
         public float OffsetX
@@ -789,8 +788,23 @@ namespace TMXGlueLib
             set { gid = uint.Parse(value); }
         }
 
+        [XmlAttribute(AttributeName = "type")]
+        public string Type
+        {
+            get; set;
+        }
+
         [XmlIgnore]
         public uint? gid { get; set; }
+
+        [XmlIgnore]
+        public uint? GidNoFlip
+        {
+            get
+            {
+                return 0x0fffffff & gid;
+            }
+        }
 
         private IDictionary<string, string> propertyDictionaryField = null;
 

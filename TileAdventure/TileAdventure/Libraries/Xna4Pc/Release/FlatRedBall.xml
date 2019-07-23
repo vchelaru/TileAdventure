@@ -692,7 +692,7 @@
         </member>
         <member name="P:FlatRedBall.Graphics.Animation.AnimationChain.FrameTime">
             <summary>
-            Sets the frameTime of each AnimationFrame in the AnimationChain to the passed value.
+            Sets the frame time to every frame in the animation to the value. For example, assigning a FrameTime of .2 will make every frame in the animation last .2 seconds.
             </summary>
         </member>
         <member name="P:FlatRedBall.Graphics.Animation.AnimationChain.LastFrame">
@@ -708,7 +708,7 @@
         </member>
         <member name="P:FlatRedBall.Graphics.Animation.AnimationChain.TotalLength">
             <summary>
-            Returns the sum of the FrameLengths of all contained AnimationFrames.
+            The total duration of the animation in seconds. This is obtained by adding the FrameTime of all contained frames.
             </summary>
         </member>
         <member name="M:FlatRedBall.Graphics.Animation.AnimationChain.#ctor">
@@ -1111,6 +1111,14 @@
             This class can be created through the FlatRedBallServices.Load method.
             </remarks>
         </member>
+        <member name="M:FlatRedBall.Graphics.Texture.ImageData.#ctor(System.Int32,System.Int32,System.Byte[])">
+            <summary>
+            Constructs a new ImageData object of the given width and height with the argument data stored as a byte array.
+            </summary>
+            <param name="width">Width of the image data</param>
+            <param name="height">Height of the image data</param>
+            <param name="data">Data as a byte array</param>
+        </member>
         <member name="M:FlatRedBall.Graphics.Texture.ImageData.RemoveRow(System.Int32)">
             <summary>
             Removes the index row from the contained data.  Row 0 is the top of the texture.
@@ -1478,7 +1486,8 @@
         </member>
         <member name="P:FlatRedBall.Graphics.GraphicsOptions.TextureFilter">
             <summary>
-            Gets or sets the current texture filter
+            Gets or sets the current texture filter. If SuspendDeviceReset has not been called then 
+            this setter will immediately apply the texture filter.
             </summary>
         </member>
         <member name="P:FlatRedBall.Graphics.GraphicsOptions.ResolutionWidth">
@@ -1535,7 +1544,8 @@
         </member>
         <member name="M:FlatRedBall.Graphics.GraphicsOptions.ResetDevice">
             <summary>
-            Resets the device
+            Resets the device if the device is not currently rendering, if the graphics device is not null, and if 
+            device resetting is not suspended.
             </summary>
         </member>
         <member name="M:FlatRedBall.Graphics.GraphicsOptions.SetPresentationParameters(Microsoft.Xna.Framework.Graphics.PresentationParameters@)">
@@ -1878,6 +1888,12 @@
             FlatRedBall is drawn.
             </summary>
         </member>
+        <member name="P:FlatRedBall.Graphics.Renderer.ColorOperation">
+            <summary>
+            Sets the color operation on the graphics device if the set value differs from the current value.
+            This is public so that IDrawableBatches can set the color ops.
+            </summary>
+        </member>
         <member name="P:FlatRedBall.Graphics.Renderer.BlendOperation">
             <summary>
             Sets the blend operation on the graphics device if the set value differs from the current value.
@@ -2020,6 +2036,17 @@
             <param name="textToAdd">Reference to the text object to add.</param>
             <param name="cameraToAddTo">Reference to the camera to be added to.</param>
             <returns>The added text.</returns>
+        </member>
+        <member name="M:FlatRedBall.Graphics.TextManager.AddManuallyUpdated(FlatRedBall.Graphics.Text,FlatRedBall.Graphics.Layer)">
+            <summary>
+            Adds a text object to the TextManager to be drawn, but which will not have
+            its every-frame activity called.
+            </summary>
+            <param name="text">The text to add.</param>
+            <param name="layerToAddTo">The optional layer to add to. If null, the Text will be unlayered.</param>
+            <remarks>Texts added with AddManuallyUpdated will not be visible unless they have
+            their UpdateDependencies or ForceUpdateDependencies called after all properties have been assigned.
+            </remarks>
         </member>
         <member name="M:FlatRedBall.Graphics.TextManager.GetWidth(System.String)">
             <summary>
@@ -2184,6 +2211,13 @@
             <seealso cref="T:FlatRedBall.Gui.IInputReceiver"/>
             </remarks>
         </member>
+        <member name="M:FlatRedBall.Input.Keyboard.KeyPushed(Microsoft.Xna.Framework.Input.Keys)">
+            <summary>
+            Returns true if the argument key was not down last frame, but is down this frame.
+            </summary>
+            <param name="key">The key to check</param>
+            <returns>Whether the key was just pushed.</returns>
+        </member>
         <member name="M:FlatRedBall.Input.Keyboard.KeyTyped(Microsoft.Xna.Framework.Input.Keys)">
             <summary>
             Returns whether a key was "typed".  A type happens either when the user initially pushes a key down, or when
@@ -2203,6 +2237,12 @@
             <param name="up">The key to use for the up direction.</param>
             <param name="down">The key to use for the down direction.</param>
             <returns>The I2DInput instance which can be used to read input.</returns>
+        </member>
+        <member name="M:FlatRedBall.Input.KeyboardStateProcessor.Clear">
+            <summary>
+            Clears the keyboard states, simulating the keyboard
+            not having any values down or pressed
+            </summary>
         </member>
         <member name="F:FlatRedBall.Input.Mouse.mXAt100Units">
             <summary>
@@ -2307,6 +2347,16 @@
             0.0f.  When fully pressed this property returns 1.0f;
             </summary>
         </member>
+        <member name="P:FlatRedBall.Input.Xbox360GamePad.WasConnectedThisFrame">
+            <summary>
+            Returns whether this game pad was disconnected last frame but is connected this frame.
+            </summary>
+        </member>
+        <member name="P:FlatRedBall.Input.Xbox360GamePad.WasDisconnectedThisFrame">
+            <summary>
+            Returns whether this game pad was connected last frame but is disconnected this frame.
+            </summary>
+        </member>
         <member name="M:FlatRedBall.Input.Xbox360GamePad.AnyButtonPushed">
             <summary>
             Returns whether any button was pushed on this Xbox360GamePad.  This considers face buttons, trigger buttons, shoulder buttons, and d pad.
@@ -2386,6 +2436,11 @@
             was unable to process the request.
             </returns>
         </member>
+        <member name="T:FlatRedBall.Input.IPressableInput">
+            <summary>
+            Provides a common interface for input devices which can have a down/not down state, such as a game pad or mouse button.
+            </summary>
+        </member>
         <member name="P:FlatRedBall.Input.IPressableInput.IsDown">
             <summary>
             Returns whether the input is down (such as if a key is held or a mouse button is down)
@@ -2394,6 +2449,11 @@
         <member name="P:FlatRedBall.Input.IPressableInput.WasJustPressed">
             <summary>
             Returns whether the input was pressed this frame (not down last frame, is down this frame)
+            </summary>
+        </member>
+        <member name="P:FlatRedBall.Input.IPressableInput.WasJustReleased">
+            <summary>
+            Returns whether the input was released this frame(down last frame, not down this frame)
             </summary>
         </member>
         <member name="T:FlatRedBall.Input.MultiplePressableInputs">
@@ -2412,6 +2472,54 @@
             jumpInput.Inputs.Add(InputManager.Keyboard.GetKey(Keys.Space));
             jumpInput.Inputs.Add(InputManager.Keyboard.GetKey(Keys.Enter));
             </example>
+        </member>
+        <member name="T:FlatRedBall.Input.I2DInput">
+            <summary>
+            Provides a common interface for input devices which can return values on the X and Y axis, such as an analog stick.
+            </summary>
+        </member>
+        <member name="P:FlatRedBall.Input.I2DInput.X">
+            <summary>
+            The X value of the input device, typically between 0 and 1.
+            </summary>
+            <example>
+            // Assuming inputDevice is an I2DInput instance
+            this.XVelocity = inputDevice.X * this.MaxSpeed;
+            </example>
+        </member>
+        <member name="P:FlatRedBall.Input.I2DInput.Y">
+            <summary>
+            The Y value of the input device, typically between 0 and 1.
+            </summary>
+            <example>
+            // Assuming inputDevice is an I2DInput instance
+            this.YVelocity = inputDevice.Y * this.MaxSpeed;
+            </example>
+        </member>
+        <member name="P:FlatRedBall.Input.I2DInput.XVelocity">
+            <summary>
+            The rate of change of the input device on the X axis. This measures how fast the user is changing the device. For example,
+            it can be used to tell how fast the user's thumb is moving on an analog stick.
+            </summary>
+        </member>
+        <member name="P:FlatRedBall.Input.I2DInput.YVelocity">
+            <summary>
+            The rate of change of the input device on the Y axis. This measures how fast the user is changing the device. For example,
+            it can be used to tell how fast the user's thumb is moving on an analog stick.
+            </summary>
+        </member>
+        <member name="P:FlatRedBall.Input.I2DInput.Magnitude">
+            <summary>
+            The distance from (0,0) of the input device. It can be used to detect if any input is being applied on this input device.
+            </summary>
+        </member>
+        <member name="M:FlatRedBall.Input.I2DInputExtensions.GetAngle(FlatRedBall.Input.I2DInput)">
+            <summary>
+            Returns the angle in radians of the input object, where 0 is to the right, rotating counterclockwise.
+            Returns null if the X and Y values are 0 (meaning the input device is centered)
+            </summary>
+            <param name="instance">The I2DInput instance</param>
+            <returns>The angle, or null if X and Y are 0</returns>
         </member>
         <member name="T:FlatRedBall.Input.Multiple2DInputs">
             <summary>
@@ -2432,14 +2540,6 @@
             multipleInputs.Inputs.Add(keyboard2DInput);
             multipleInputs.Inputs.Add(gamepad2DInput);
             </example>
-        </member>
-        <member name="M:FlatRedBall.Input.I2DInputExtensions.GetAngle(FlatRedBall.Input.I2DInput)">
-            <summary>
-            Returns the angle in radians of the input object, where 0 is to the right, rotating counterclockwise.
-            Returns null if the X and Y values are 0 (meaning the input device is centered)
-            </summary>
-            <param name="instance">The I2DInput instance</param>
-            <returns>The angle, or null if X and Y are 0</returns>
         </member>
         <member name="T:FlatRedBall.Input.DirectionalKeyGroup">
             <summary>
@@ -2704,6 +2804,26 @@
         <member name="T:FlatRedBall.IO.Csv.CsvReader">
             <summary>
             Represents a reader that provides fast, non-cached, forward-only access to CSV data.  
+            </summary>
+        </member>
+        <member name="T:FlatRedBall.IO.Csv.CsvReader.DataReaderValidations">
+            <summary>
+            Defines the data reader validations.
+            </summary>
+        </member>
+        <member name="F:FlatRedBall.IO.Csv.CsvReader.DataReaderValidations.None">
+            <summary>
+            No validation.
+            </summary>
+        </member>
+        <member name="F:FlatRedBall.IO.Csv.CsvReader.DataReaderValidations.IsInitialized">
+            <summary>
+            Validate that the data reader is initialized.
+            </summary>
+        </member>
+        <member name="F:FlatRedBall.IO.Csv.CsvReader.DataReaderValidations.IsNotClosed">
+            <summary>
+            Validate that the data reader is not closed.
             </summary>
         </member>
         <member name="F:FlatRedBall.IO.Csv.CsvReader.DefaultBufferSize">
@@ -3505,26 +3625,6 @@
             Releases unmanaged resources and performs other cleanup operations before the instance is reclaimed by garbage collection.
             </summary>
         </member>
-        <member name="T:FlatRedBall.IO.Csv.CsvReader.DataReaderValidations">
-            <summary>
-            Defines the data reader validations.
-            </summary>
-        </member>
-        <member name="F:FlatRedBall.IO.Csv.CsvReader.DataReaderValidations.None">
-            <summary>
-            No validation.
-            </summary>
-        </member>
-        <member name="F:FlatRedBall.IO.Csv.CsvReader.DataReaderValidations.IsInitialized">
-            <summary>
-            Validate that the data reader is initialized.
-            </summary>
-        </member>
-        <member name="F:FlatRedBall.IO.Csv.CsvReader.DataReaderValidations.IsNotClosed">
-            <summary>
-            Validate that the data reader is not closed.
-            </summary>
-        </member>
         <member name="T:FlatRedBall.IO.Csv.CsvReader.RecordEnumerator">
             <summary>
             Supports a simple iteration over the records of a <see cref="T:CsvReader"/>.
@@ -3671,6 +3771,12 @@
             Represents the raw data loaded from a csv file.  This is
             used if the data must be processed or converted by hand to
             other object types.
+            </summary>
+        </member>
+        <member name="P:FlatRedBall.IO.FileManager.PreserveCase">
+            <summary>
+            Whether file paths should be preserved as mixed case. If false 
+            all file paths will be made to-lower.
             </summary>
         </member>
         <member name="P:FlatRedBall.IO.FileManager.RelativeDirectory">
@@ -4503,6 +4609,11 @@
             <param name="position">The point to find the closest PositionedNode to.</param>
             <returns>The PositionedNode that is the closest to the argument position.</returns>
         </member>
+        <member name="P:FlatRedBall.AI.Pathfinding.NodeNetwork.NodeVisualizationRadius">
+            <summary>
+            The radius of the shape used to visualize a node when the NodeNetwork is visible.
+            </summary>
+        </member>
         <member name="M:FlatRedBall.AI.Pathfinding.NodeNetwork.GetVisibleNodeRadius(FlatRedBall.Camera,System.Int32)">
             <summary>
             Returns the radius of the PositionedNode visible representation Polygons.
@@ -4805,7 +4916,7 @@
         </member>
         <member name="T:FlatRedBall.AI.Pathfinding.TileNodeNetwork">
             <summary>
-            A node network which is designed specifically for tile-based pathfinding.
+            A node network optimized for tile-based pathfinding.
             </summary>
         </member>
         <member name="M:FlatRedBall.AI.Pathfinding.TileNodeNetwork.#ctor(System.Single,System.Single,System.Single,System.Int32,System.Int32,FlatRedBall.AI.Pathfinding.DirectionalType)">
@@ -4821,6 +4932,32 @@
             <param name="numberOfXTiles">The number of nodes vertically.</param>
             <param name="numberOfYTiles">The number of nodes horizontally.</param>
             <param name="directionalType">Whether to create a Four-way or Eight-way node network. Eight creates diagonal links, enabling diagonal movement when following the node network.</param>
+        </member>
+        <member name="M:FlatRedBall.AI.Pathfinding.TileNodeNetwork.AddAndLinkTiledNodeWorld(System.Single,System.Single)">
+            <summary>
+            Adds a new node at the world X and Y location. Internally the world coordinates are converted to x,y indexes and the node is stored
+            in a 2D grid.
+            </summary>
+            <param name="worldX">The world X units.</param>
+            <param name="worldY">The world Y units.</param>
+            <returns>The newly-created PositionedNode</returns>
+        </member>
+        <member name="M:FlatRedBall.AI.Pathfinding.TileNodeNetwork.AddAndLinkTiledNode(System.Int32,System.Int32)">
+            <summary>
+            Adds a new node at the tile index x, y.
+            </summary>
+            <param name="x">The x index of the tile.</param>
+            <param name="y">The y index of the tile.</param>
+            <returns>The newly-created PositionedNode</returns>
+        </member>
+        <member name="M:FlatRedBall.AI.Pathfinding.TileNodeNetwork.AddAndLinkTiledNode(System.Int32,System.Int32,FlatRedBall.AI.Pathfinding.DirectionalType)">
+            <summary>
+            Creates a new node at index x, y and links the node to adjacent nodes given the TileNodeNetwork's GridSpacing
+            </summary>
+            <param name="x">The X index</param>
+            <param name="y">The Y index</param>
+            <param name="directionalType">The DirectionalType, which is either Four or Eight way. Four will link in cardinal directions, while Eight will also link diagonally.</param>
+            <returns></returns>
         </member>
         <member name="M:FlatRedBall.AI.Pathfinding.TileNodeNetwork.AddNode(FlatRedBall.AI.Pathfinding.PositionedNode)">
             <summary>
@@ -4904,6 +5041,38 @@
             </para>
             </remarks>
         </member>
+        <member name="M:FlatRedBall.Camera.AbsoluteRightXEdgeAt(System.Single)">
+            <summary>
+            Returns the right-most visible X value at a given absolute Z value.
+            The absoluteZ parameter is ignored if the camera has its Orthogonal = true (is 2D)
+            </summary>
+            <param name="absoluteZ">The absolute Z to use for determining the right-edge.</param>
+            <returns>The furthest-right visible X value at the given absolute Z.</returns>
+        </member>
+        <member name="M:FlatRedBall.Camera.AbsoluteLeftXEdgeAt(System.Single)">
+            <summary>
+            Returns the left-most visible X value at a given absolute Z value.
+            The absoluteZ parameter is ignored if the camera has its Orthogonal = true (is 2D)
+            </summary>
+            <param name="absoluteZ">The absolute Z to use for determing the left-edge.</param>
+            <returns>The furthest-left visible X value at the given absolute Z.</returns>
+        </member>
+        <member name="M:FlatRedBall.Camera.AbsoluteTopYEdgeAt(System.Single)">
+            <summary>
+            Returns the top-most visible Y value at a given absolute Z value.
+            The absoluteZ parameter is ignored if the camera has its Orthogonal = true (is 2D)
+            </summary>
+            <param name="absoluteZ">The absolute Z to use for determining the top-edge.</param>
+            <returns>The furthest-top visible Y value at the given absolute Z.</returns>
+        </member>
+        <member name="M:FlatRedBall.Camera.AbsoluteBottomYEdgeAt(System.Single)">
+            <summary>
+            Returns the bottom-most visible Y value at a given absolute Z value.
+            The absoluteZ parameter is ignored if the camera has its Orthogonal = true (is 2D)
+            </summary>
+            <param name="absoluteZ">The absolute Z to use for determining the bottom-edge.</param>
+            <returns>The furthest-bottom visible Y value at the given absolute Z.</returns>
+        </member>
         <member name="P:FlatRedBall.Camera.AspectRatio">
             <summary>
             The width/height of the view of the camera
@@ -4930,6 +5099,22 @@
             <summary>
             Whether the Camera draws shapes
             </summary>
+        </member>
+        <member name="P:FlatRedBall.Camera.OrthogonalWidth">
+            <summary>
+            The number of horizontal units shown by the camera when the camera has Orthogonal = true
+            </summary>
+            <remarks>
+            Orthogonal values will not have any impact on rendering if Orthogonal is false.
+            </remarks>
+        </member>
+        <member name="P:FlatRedBall.Camera.OrthogonalHeight">
+            <summary>
+            The number of vertical units shown by the camera when the camera has Orthogonal = true 
+            </summary>
+            <remarks>
+            Orthogonal values will not have any impact on rendering if Orthogonal is false.
+            </remarks>
         </member>
         <member name="M:FlatRedBall.Camera.FixAspectRatioYConstant">
             <summary>
@@ -4960,6 +5145,12 @@
             Returns whether the argument sprite is in view, considering the CameraCullMode. This will always return
             true if cull mode is set to None.
             </summary>
+            <remarks>
+            This method does not do a perfectly precise check of whether the Sprite is on screen or not, as such
+            a check would require considering the Sprite's rotation. Instead, this uses approximations to avoid
+            trigonometric functions, and will err on the side of returning true when a Sprite may actually be out
+            of view.
+            </remarks>
             <param name="sprite">The sprite to check in view</param>
             <param name="relativeToCamera">Whether the sprite's position is relative to the camera. This value may be true if the 
             sprite is on a Layer, and the Layer's RelativeToCamera value is true.</param>
@@ -5053,6 +5244,26 @@
             This instance is automatically created when the Camera is instantiated.
             </remarks>
         </member>
+        <member name="P:FlatRedBall.Camera.MinimumX">
+            <summary>
+            The Minimum camera X (center). This is applied prior to rendering and will override attachment.
+            </summary>
+        </member>
+        <member name="P:FlatRedBall.Camera.MinimumY">
+            <summary>
+            The Minimum camera Y (center). This is applied prior to rendering and will override attachment.
+            </summary>
+        </member>
+        <member name="P:FlatRedBall.Camera.MaximumX">
+            <summary>
+            The maximum Camera X (center). This is applied prior to rendering and will override attachment.
+            </summary>
+        </member>
+        <member name="P:FlatRedBall.Camera.MaximumY">
+            <summary>
+            The maximum Camera Y (center). This is applied prior to rendering and will override attachment.
+            </summary>
+        </member>
         <member name="M:FlatRedBall.Camera.AddLayer(FlatRedBall.Graphics.Layer)">
             <summary>
             Adds a layer to the Camera.  This method does not remove layers that already 
@@ -5063,12 +5274,6 @@
         <member name="M:FlatRedBall.Camera.AddSpriteToBillboard(FlatRedBall.Sprite)">
             <summary>
             Supplied sprites are billboarded using the camera's RotationMatrix.
-            Only the main Camera can billboard sprites.
-            </summary>
-        </member>
-        <member name="M:FlatRedBall.Camera.AddSpriteToBillboard(System.Collections.Generic.IEnumerable{FlatRedBall.Sprite})">
-            <summary>
-            Supplied Sprites are billboarded using the camera's RotationMatrix.
             Only the main Camera can billboard sprites.
             </summary>
         </member>
@@ -5219,6 +5424,12 @@
             <summary>
             Basic initialization steps (commond to all initialization methods)
             </summary>
+        </member>
+        <member name="M:FlatRedBall.FlatRedBallServices.Unload(System.String)">
+            <summary>
+            Unloads all content contained in the content manager with name matching the parameter contentManagerName.
+            </summary>
+            <param name="contentManagerName">The content manager to remove.</param>
         </member>
         <member name="M:FlatRedBall.FlatRedBallServices.ReplaceFromFileTexture2D(Microsoft.Xna.Framework.Graphics.Texture2D,Microsoft.Xna.Framework.Graphics.Texture2D,System.String)">
             <summary>
@@ -5940,6 +6151,56 @@
             not have to be called automatically.
             </summary>
         </member>
+        <member name="E:FlatRedBall.Gui.IWindow.Click">
+            <summary>
+            An event raised when the window is clicked (the user pushes and releases on the window)
+            </summary>
+        </member>
+        <member name="E:FlatRedBall.Gui.IWindow.ClickNoSlide">
+            <summary>
+            An event raised when the window is pushed and released without moving.
+            </summary>
+        </member>
+        <member name="E:FlatRedBall.Gui.IWindow.SlideOnClick">
+            <summary>
+            An event raised when the cursor is pushed when not on the window, but then released when it is on the window. 
+            This can be used as a drag+drop event.
+            </summary>
+        </member>
+        <member name="E:FlatRedBall.Gui.IWindow.Push">
+            <summary>
+            An event raised when the cursor is pushed (not down last frame, is on this frame)
+            </summary>
+        </member>
+        <member name="E:FlatRedBall.Gui.IWindow.DragOver">
+            <summary>
+            Event raied when the cursor moves and this window is the pressed window. This is called whether
+            the cursor is over the current window or not.
+            </summary>
+        </member>
+        <member name="E:FlatRedBall.Gui.IWindow.RollOn">
+            <summary>
+            An event raised when the cursor moves onto the window for the first time. 
+            This is raised only once until the user moves the cursor off and then back on.
+            </summary>
+        </member>
+        <member name="E:FlatRedBall.Gui.IWindow.RollOff">
+            <summary>
+            An event raised when the cursor moves off of the window 
+            </summary>
+        </member>
+        <member name="E:FlatRedBall.Gui.IWindow.RollOver">
+            <summary>
+            An event raised when the cursor moves while it is over the window. This is raised every frame that
+            the cursor moves and is over the window. This event is not raised unless the cursor is over the window.
+            </summary>
+            <seealso cref="E:FlatRedBall.Gui.IWindow.DragOver"/>
+        </member>
+        <member name="E:FlatRedBall.Gui.IWindow.EnabledChange">
+            <summary>
+            Event raised when the Enabled property changes on the window.
+            </summary>
+        </member>
         <member name="T:FlatRedBall.Gui.WindowArray">
             <summary>
             Summary description for WindowArray.
@@ -6167,6 +6428,13 @@
             <summary>
             Whether the (automatically called) Update method executes instructions.  Default true.
             </summary>
+        </member>
+        <member name="M:FlatRedBall.Instructions.InstructionManager.AddSafe(System.Action)">
+            <summary>
+            Creates a new DelegateInstruction using the argument Action, and adds it to be executed
+            on the next frame on the primary thread.
+            </summary>
+            <param name="action">The action to execute.</param>
         </member>
         <member name="M:FlatRedBall.Instructions.InstructionManager.Add(FlatRedBall.Instructions.Instruction)">
             <summary>
@@ -7178,13 +7446,21 @@
         <member name="P:FlatRedBall.Math.Collision.CollisionManager.Relationships">
             <summary>
             The relationships which are currently part of the collision manager. This should not be added to
-            by regular game code. This is exposed so that collision manager extension methods can add new relationships.
+            by regular game code. This is exposed so that collision manager extension methods can add new relationships, and
+            so relationships can be cleared.
+            </summary>
+        </member>
+        <member name="P:FlatRedBall.Math.Collision.CollisionRelationship.CollidedThisFrame">
+            <summary>
+            Whether a collision occurred this frame. This is set when the collision performs its collision logic in DoCollisions, which
+            may get called automatically, or may get called manually if IsActive is set to false.
             </summary>
         </member>
         <member name="P:FlatRedBall.Math.Collision.CollisionRelationship.IsActive">
             <summary>
             Whether the CollisionManager autoamtically calls DoCollisions on this relationship every frame.
-            If set to false, the CollisionManager will not call DoCollision, but DoCollision can be called automatically
+            If set to false, the CollisionManager will not call DoCollision, but DoCollision can be called manually
+            to perform collision.
             </summary>
         </member>
         <member name="P:FlatRedBall.Math.Collision.CollisionRelationship.FrameSkip">
@@ -7194,6 +7470,14 @@
             <remarks>
             A value of 1 will result in 1 frame being skipped after performing collisio logic resulting in collision being performed every other frame.
             </remarks>
+        </member>
+        <member name="M:FlatRedBall.Math.Collision.CollisionRelationship.DoCollisions">
+            <summary>
+            Performs the collision logic and returns whether a collision has occurred. This method
+            does not need to be called if the CollisionRelationship is part of the CollisionManager
+            and if its IsActive is set to true (both of which are the most common setup).
+            </summary>
+            <returns>Whether collisions occurred this frame.</returns>
         </member>
         <member name="M:FlatRedBall.Math.Geometry.AxisAlignedRectangle.CollideAgainst(FlatRedBall.Math.Geometry.Circle)">
             <summary>
@@ -7484,13 +7768,26 @@
         </member>
         <member name="P:FlatRedBall.Math.Geometry.Polygon.Points">
             <summary>
-            The Position-relative points of the Polygon.
+            The Position-relative points of the Polygon. A point at 0,0 will be positioned at the center of the Polygon.
             </summary>
             <remarks>
             This value can be assigned to completely replace the points in a polygon.
             Changing this list updates the Vertices internally and immediately
-            makes the polygon available for rendering.
+            makes the polygon available for rendering. Note that a closed polygon will have its first point repeated. For example
+            a closed rectangle will have 5 points (the normal 4 points, plus the last point repeating the first).
             </remarks>
+            <example>
+            Point[] points = new Point[5];
+            points[0].X = 100;
+            points[0].Y = 100;
+            
+            points[1].X = 100;
+            points[1].Y = -100;
+            
+            ...
+            
+            polygonInstance.Points = points;
+            </example>
         </member>
         <member name="P:FlatRedBall.Math.Geometry.Polygon.LastMoveCollisionReposition">
             <summary>
@@ -7584,12 +7881,18 @@
             <param name="vector">The position of the point</param>
             <returns>Whether the point is inside.</returns>
         </member>
+        <member name="M:FlatRedBall.Math.Geometry.Polygon.ScaleBy(System.Double)">
+            <summary>
+            Scales all points in the polygon by the argument value. A value of 1 will leave the polygon unchanged.
+            </summary>
+            <param name="amountToScaleBy">The value to scale by. For example, a value of 2 will double the X and Y values of all points.</param>
+        </member>
         <member name="M:FlatRedBall.Math.Geometry.Polygon.ScaleBy(System.Double,System.Double)">
             <summary>
             Scales all points in object space.
             </summary>
-            <param name="scaleX">Amount to scale by on the object's X axis.</param>
-            <param name="scaleY">Amount to scale by on the object's Y axis.</param>
+            <param name="scaleX">Amount to scale by on the object's X axis. For example, a value of 2 would double the relative X values of all points.</param>
+            <param name="scaleY">Amount to scale by on the object's Y axis. For example, a value of 2 would double the relative Y values of all points.</param>
         </member>
         <member name="M:FlatRedBall.Math.Geometry.Polygon.SetPoint(System.Int32,System.Double,System.Double)">
             <summary>
@@ -9522,7 +9825,8 @@
         </member>
         <member name="P:FlatRedBall.Screens.Screen.NextScreen">
             <summary>
-            The fully qualified path of the Screen-inheriting class that this screen is 
+            The name of the Screen-inheriting to load next. This can be fully qualified "Namespace.Screens.ScreenName" or 
+            just the screen name. If just a screen name is specified then current screen's namespace will be prepended.
             to link to.
             </summary>
             <remarks>
@@ -9599,6 +9903,13 @@
             Gets the current animationChain - retrieved through the CurrentChainIndex property.
             </summary>
         </member>
+        <member name="P:FlatRedBall.Sprite.CurrentChainName">
+            <summary>
+            Gets or sets the name of the current animation chain on the sprite. Setting this value is the recommended way to switch between animations.
+            Setting this value will search the Sprite's AnimationChains for an animation with a matching name. If the argument differs from the current
+            animation, the animation is set and played from the beginning. If the current animation matches the assigned value, no logic is performed.
+            </summary>
+        </member>
         <member name="P:FlatRedBall.Sprite.ScaleX">
             <summary>
             The distance from the center of the Sprite to its edge, which is equal to Width / 2.
@@ -9608,6 +9919,38 @@
             <summary>
             The distance from the center of the Sprite to its edge, which is equal to Height / 2. 
             </summary>
+        </member>
+        <member name="P:FlatRedBall.Sprite.Left">
+            <summary>
+            Returns the left X of the Sprite, assuming no rotation.
+            </summary>
+            <remarks>
+            If the sprite is rotated, this property will not return the correct value.
+            </remarks>
+        </member>
+        <member name="P:FlatRedBall.Sprite.Right">
+            <summary>
+            Returns the right X of the sprite, assuming no rotation.
+            </summary>
+            <remarks>
+            If the sprite is rotated, this property will not return the correct value.
+            </remarks>
+        </member>
+        <member name="P:FlatRedBall.Sprite.Top">
+            <summary>
+            Returns the top Y of the sprite, assuming no rotation.
+            </summary>
+            <remarks>
+            If the sprite is rotated, this property will not return the correct value.
+            </remarks>
+        </member>
+        <member name="P:FlatRedBall.Sprite.Bottom">
+            <summary>
+            Returns the bottom Y of the sprite, assuming no rotation.
+            </summary>
+            <remarks>
+            If the sprite is rotated, this property will not return the correct value.
+            </remarks>
         </member>
         <member name="P:FlatRedBall.Sprite.RelativeLeft">
             <summary>
@@ -10084,6 +10427,14 @@
             </summary>
             <param name="layerToMove">Which layer to move.</param>
             <param name="relativeTo">The layer to move in front of.</param>
+        </member>
+        <member name="M:FlatRedBall.SpriteManager.RemoveSpriteOneWay(FlatRedBall.Sprite)">
+            <summary>
+            Removes the argument sprite from all SpriteManager lists and all
+            layers, but keeps the Sprite attached to its parent objects
+            (such as a Glue entity).
+            </summary>
+            <param name="spriteToRemove">The Sprite to remove</param>
         </member>
         <member name="M:FlatRedBall.SpriteManager.RemovePositionedObject(FlatRedBall.PositionedObject)">
             <summary>

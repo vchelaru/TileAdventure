@@ -206,10 +206,15 @@ namespace FlatRedBall.TileEntities
 
                         if (factory == null)
                         {
-                            string message =
-                                $"The factory for entity {entityType} could not be found. To create instances of this entity, " +
-                                "set its 'CreatedByOtherEntities' property to true in Glue.";
-                            throw new Exception(message);
+                            bool isEntity = typesInThisAssembly.Any(item => item.Name.Contains($".Entities.") && item.Name.EndsWith(entityType));
+
+                            if (isEntity)
+                            {
+                                string message =
+                                    $"The factory for entity {entityType} could not be found. To create instances of this entity, " +
+                                    "set its 'CreatedByOtherEntities' property to true in Glue.";
+                                throw new Exception(message);
+                            }
                         }
                         else
                         {
@@ -279,7 +284,8 @@ namespace FlatRedBall.TileEntities
                 // If name is EntityToCreate, skip it:
                 string propertyName = property.Name;
 
-                bool shouldSet = propertyName != "EntityToCreate";
+                bool shouldSet = propertyName != "EntityToCreate" && 
+                            propertyName != "Type";
 
                 if (shouldSet)
                 {
@@ -297,10 +303,37 @@ namespace FlatRedBall.TileEntities
                         propertyType = TryGetPropertyType(entityType, propertyName);
                     }
 
-                    valueToSet = SetValueAccordingToType(valueToSet, propertyName, propertyType, entityType);
+                    valueToSet = ConvertValueAccordingToType(valueToSet, propertyName, propertyType, entityType);
                     try
                     {
-                        lateBinder.SetValue(entity, propertyName, valueToSet);
+                        switch(propertyName)
+                        {
+                            case "X":
+                                if(valueToSet is float)
+                                {
+                                    entity.X += (float)valueToSet;
+                                }
+                                else if(valueToSet is int)
+                                {
+                                    entity.X += (int)valueToSet;
+                                }
+                                break;
+                            case "Y":
+                                if (valueToSet is float)
+                                {
+                                    entity.Y += (float)valueToSet;
+                                }
+                                else if (valueToSet is int)
+                                {
+                                    entity.Y += (int)valueToSet;
+                                }
+                                break;
+                            default:
+                                lateBinder.SetValue(entity, propertyName, valueToSet);
+                                break;
+                        }
+
+
                     }
                     catch (InvalidCastException e)
                     {
@@ -380,7 +413,7 @@ namespace FlatRedBall.TileEntities
         }
 
 
-        private static object SetValueAccordingToType(object valueToSet, string valueName, string valueType, Type entityType)
+        private static object ConvertValueAccordingToType(object valueToSet, string valueName, string valueType, Type entityType)
         {
             if (valueType == "bool")
             {
@@ -429,6 +462,13 @@ namespace FlatRedBall.TileEntities
                         break;
                     }
                 }
+            }
+            // todo - could add support for more file types here like textures, etc...
+            else if (valueType == "FlatRedBall.Graphics.Animation.AnimationChainList")
+            {
+                var method = entityType.GetMethod("GetFile");
+
+                valueToSet = method.Invoke(null, new object[] { valueToSet });
             }
             // If this has a + in it, then that might mean it's a state. We should try to get the type, and if we find it, stuff
             // it in allDictionaries to make future calls faster
@@ -517,7 +557,9 @@ namespace FlatRedBall.TileEntities
                 var methodInfo = type.GetMethod("CreateNew", new[] { typeof(Layer), typeof(float), typeof(float) });
                 var returntypeString = methodInfo.ReturnType.Name;
 
-                return entityType == returntypeString || entityType.EndsWith("\\" + returntypeString);
+                return entityType == returntypeString ||
+                    entityType.EndsWith("\\" + returntypeString) ||
+                    entityType.EndsWith("/" + returntypeString);
             });
             return factory;
         }
